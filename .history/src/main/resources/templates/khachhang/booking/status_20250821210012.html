@@ -135,7 +135,7 @@
                     <div class="d-flex justify-content-center gap-2 flex-wrap">
                         <!-- Nút xem hóa đơn -->
                         <a th:href="@{'/booking/invoice/' + ${booking.id}}" class="btn btn-outline-info">
-                            <i class="bi bi-receipt"></i> Xem hóa đơn thanh toán
+                            <i class="bi bi-receipt"></i> Xem hóa đơn
                         </a>
                         
                         <!-- Nút thanh toán nếu đã xác nhận -->
@@ -147,7 +147,7 @@
                         <!-- Nút đặt dịch vụ nếu đã xác nhận hoặc thanh toán -->
                                 <a th:if="${booking.status == 'Đã xác nhận' or (booking.status != null and booking.status.contains('thanh toán'))}" 
                                     th:href="@{'/khachhang/services/my-orders?bookingId=' + ${booking.id}}" class="btn btn-success">
-                            <i class="bi bi-gear"></i> Xem đơn hàng dịch vụ
+                            <i class="bi bi-gear"></i> Xem đơn hàng
                         </a>
                         
                         <!-- Nút quay lại lịch sử -->
