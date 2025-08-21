@@ -123,7 +123,7 @@
                                 
                                 <!-- Nút thanh toán nếu đã xác nhận -->
                                 <a th:if="${booking.status == 'Đã xác nhận'}" 
-                                   th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-sm btn-warning">
+                                   th:href="@{'/booking/payment/' + ${booking.id}}" class="btn btn-sm btn-warning">
                                     <i class="bi bi-credit-card"></i> Thanh toán
                                 </a>
                                 

@@ -250,7 +250,6 @@
                                   class="payment-form"
                                   th:data-amount="${total}"
                                   th:data-booking="${booking.id}">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <button type="submit" class="btn btn-pay">
                                     <i class="bi bi-credit-card"></i> Thanh toán đặt phòng
                                 </button>
@@ -263,7 +262,6 @@
                                   class="payment-form"
                                   th:data-amount="${servicePayableTotal}"
                                   th:data-booking="${booking.id}">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <button type="submit" class="btn btn-pay">
                                     <i class="bi bi-bag-check"></i> Thanh toán dịch vụ (<span th:text="${payableServicesCount}">0</span>)
                                 </button>

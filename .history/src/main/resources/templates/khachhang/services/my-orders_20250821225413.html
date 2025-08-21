@@ -363,11 +363,7 @@ s<!DOCTYPE html>
                                 </div>
 
                                 <!-- Thanh toán dịch vụ sau khi đã thanh toán phòng -->
-                                <form th:if="${canPayServices}" th:action="@{'/khachhang/payment/' + ${selectedBooking.id} + '/services'}" method="post"
-                                      class="d-inline payment-form"
-                                      th:data-amount="${unpaidServiceTotal}"
-                                      th:data-booking="${selectedBooking.id}">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <form th:if="${canPayServices}" th:action="@{'/khachhang/payment/' + ${selectedBooking.id} + '/services'}" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-light btn-lg btn-custom">
                                         <i class="bi bi-cash-coin"></i> 💳 Thanh toán dịch vụ ( <span th:text="${#numbers.formatDecimal(unpaidServiceTotal, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ )
                                     </button>
@@ -654,57 +650,3 @@ s<!DOCTYPE html>
     </script>
 </body>
 </html>
-
-<!-- Confirmation Modal (shared) -->
-<div class="modal fade" id="confirmPaymentModal" tabindex="-1" aria-labelledby="confirmPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmPaymentModalLabel">Xác nhận thanh toán</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmPaymentMessage">Bạn có chắc muốn thanh toán số tiền <strong id="confirmAmount">0 VNĐ</strong> cho booking <strong id="confirmBooking">#0</strong>?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="confirmPaymentBtn">Xác nhận và thanh toán</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    (function(){
-        let activeForm = null;
-        const modalEl = document.getElementById('confirmPaymentModal');
-        if (!modalEl) return;
-        const bsModal = new bootstrap.Modal(modalEl);
-        const amountEl = document.getElementById('confirmAmount');
-        const bookingEl = document.getElementById('confirmBooking');
-        const confirmBtn = document.getElementById('confirmPaymentBtn');
-
-        document.querySelectorAll('.payment-form').forEach(function(form){
-            form.addEventListener('submit', function(e){
-                e.preventDefault();
-                activeForm = form;
-                const amount = form.getAttribute('data-amount') || form.dataset.amount || 0;
-                const bookingId = form.getAttribute('data-booking') || form.dataset.booking || '';
-                const fmt = new Intl.NumberFormat('vi-VN');
-                amountEl.textContent = fmt.format(Number(amount || 0)) + ' VNĐ';
-                bookingEl.textContent = '#' + bookingId;
-                bsModal.show();
-            });
-        });
-
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', function(){
-                if (!activeForm) return;
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Đang xử lý...';
-                bsModal.hide();
-                setTimeout(function(){ activeForm.submit(); }, 150);
-            });
-        }
-    })();
-</script>
