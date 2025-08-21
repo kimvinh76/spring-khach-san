@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -170,10 +172,46 @@ public class KhachHangServiceController {
                 canPayServices = roomPaid && unpaidConfirmedCount > 0 && !hasPendingServices;
             }
 
+            // Gộp các dịch vụ cùng tên lại và cộng dồn số lượng
+            Map<String, ServiceOrder> groupedOrders = new LinkedHashMap<>();
+            for (ServiceOrder order : orders) {
+                String key = order.getServiceName() + "_" + order.getServiceType();
+                if (groupedOrders.containsKey(key)) {
+                    // Gộp số lượng và tổng tiền
+                    ServiceOrder existing = groupedOrders.get(key);
+                    existing.setQuantity(existing.getQuantity() + order.getQuantity());
+                    existing.setTotalAmount(existing.getTotalAmount() + order.getTotalAmount());
+                } else {
+                    // Tạo bản sao để không ảnh hưởng dữ liệu gốc
+                    ServiceOrder grouped = new ServiceOrder();
+                    grouped.setId(order.getId());
+                    grouped.setServiceName(order.getServiceName());
+                    grouped.setServiceType(order.getServiceType());
+                    grouped.setQuantity(order.getQuantity());
+                    grouped.setPrice(order.getPrice());
+                    grouped.setTotalAmount(order.getTotalAmount());
+                    grouped.setStatus(order.getStatus());
+                    grouped.setOrderTime(order.getOrderTime());
+                    grouped.setNote(order.getNote());
+                    grouped.setBookingId(order.getBookingId());
+                    grouped.setCustomer(order.getCustomer());
+                    grouped.setCustomerName(order.getCustomerName());
+                    grouped.setEmail(order.getEmail());
+                    grouped.setPhone(order.getPhone());
+                    grouped.setRoomName(order.getRoomName());
+                    grouped.setDescription(order.getDescription());
+                    grouped.setInvoice(order.getInvoice());
+                    grouped.setUserId(order.getUserId());
+                    groupedOrders.put(key, grouped);
+                }
+            }
+            
+            List<ServiceOrder> groupedOrdersList = new ArrayList<>(groupedOrders.values());
+
             // Truyền biến sang template
             model.addAttribute("paidBookings", paidBookings);
             model.addAttribute("selectedBooking", selectedBooking);
-            model.addAttribute("orders", orders);
+            model.addAttribute("orders", groupedOrdersList);
             model.addAttribute("selectedBookingId", bookingId);
             model.addAttribute("pendingCount", pendingCount);
             model.addAttribute("processingCount", processingCount);

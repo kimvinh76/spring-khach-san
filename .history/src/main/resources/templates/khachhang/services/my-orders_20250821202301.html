@@ -1,11 +1,16 @@
-s<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý dịch vụ - Hotel Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <lin                    th:data-total="${order.totalAmount}"
+                    th:data-customer="${order.customerName}"
+                    th:data-phone="${order.phone}"
+                    th:data-time="${order.orderTime != null ? #temporals.format(order.orderTime, 'dd/MM/yyyy HH:mm:ss') : ''}"
+                    th:data-status="${order.status}"
+                    th:data-note="${order.note}">>https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         /* SIMPLIFIED CSS - NO COMPLEX ANIMATIONS OR TRANSFORMS */
         body {
@@ -555,6 +560,10 @@ s<!DOCTYPE html>
                                         <span class="badge fs-6 p-2" id="modalOrderStatus">-</span>
                                     </td>
                                 </tr>
+                                <tr id="modalProcessedByRow" style="display:none;">
+                                    <th class="bg-light">👷 Xử lý bởi</th>
+                                    <td id="modalProcessedBy">-</td>
+                                </tr>
                                 <tr id="modalUpdatedAtRow" style="display:none;">
                                     <th class="bg-light">🕒 Cập nhật gần nhất</th>
                                     <td id="modalUpdatedAt">-</td>
@@ -644,8 +653,10 @@ s<!DOCTYPE html>
 
             applyStatusBadgeClass(document.getElementById('modalOrderStatus'), button.dataset.status);
 
-            // Note only (removed admin fields)
+            // Note & admin fields
             toggleRow('modalOrderNoteSection', 'modalOrderNote', button.dataset.note);
+            toggleRow('modalProcessedByRow', 'modalProcessedBy', button.dataset.processedBy);
+            toggleRow('modalUpdatedAtRow', 'modalUpdatedAt', button.dataset.updatedAt);
 
             // Cancel form visibility
             const cancelForm = document.getElementById('modalCancelForm');

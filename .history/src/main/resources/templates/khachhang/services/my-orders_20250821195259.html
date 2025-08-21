@@ -1,4 +1,4 @@
-s<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -175,7 +175,7 @@ s<!DOCTYPE html>
         </div>
         
         <!-- Orders Display -->
-        <div th:if="${orders == null or #lists.isEmpty(orders)}">
+        <div th:if="${serviceOrders == null or #lists.isEmpty(serviceOrders)}">
             <div class="empty-state text-center p-5">
                 <i class="bi bi-box" style="font-size: 4rem; color: #6c757d;"></i>
                 <h3 class="mt-3 text-muted">📭 Chưa có dịch vụ</h3>
@@ -186,14 +186,14 @@ s<!DOCTYPE html>
             </div>
         </div>
         
-        <div th:if="${orders != null and not #lists.isEmpty(orders)}">
+        <div th:if="${serviceOrders != null and not #lists.isEmpty(serviceOrders)}">
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="alert alert-success d-flex align-items-center">
                         <i class="bi bi-check-circle-fill me-2" style="font-size: 1.5rem;"></i>
                         <div>
                             <h5 class="mb-1">🎉 Dịch vụ đã đặt cho Booking <span th:text="|#${selectedBooking.id}|"></span></h5>
-                            <small>Phòng <strong th:text="${selectedBooking.room?.name ?: 'N/A'}"></strong> | Tổng <strong th:text="${#lists.size(orders)}"></strong> dịch vụ</small>
+                            <small>Phòng <strong th:text="${selectedBooking.room?.name ?: 'N/A'}"></strong> | Tổng <strong th:text="${#lists.size(serviceOrders)}"></strong> dịch vụ</small>
                         </div>
                     </div>
                 </div>
@@ -201,12 +201,12 @@ s<!DOCTYPE html>
             
             <!-- Service Orders List -->
             <div class="row">
-                <div class="col-lg-6 col-md-6 mb-4" th:each="order : ${orders}">
+                <div class="col-lg-6 col-md-6 mb-4" th:each="order : ${serviceOrders}">
                     <div class="card order-card h-100 loaded">
                         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
                             <h6 class="mb-0 fw-bold">
                                 <i class="bi bi-star-fill"></i> 
-                                <span th:text="${order.serviceName ?: 'N/A'}"></span>
+                                <span th:text="${order.service?.name ?: 'N/A'}"></span>
                             </h6>
                             <span class="badge" 
                                   th:classappend="${order.status != null and (#strings.contains(order.status, 'Hoàn thành') or #strings.contains(order.status, 'Complete'))} ? 'bg-success' : (${order.status != null and #strings.contains(order.status, 'Đang xử lý')} ? 'bg-warning text-dark' : 'bg-secondary')"
@@ -484,6 +484,36 @@ s<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- Empty State - Booking đã chọn nhưng chưa có dịch vụ -->
+        <div th:if="${selectedBooking != null and (orders == null or orders.empty)}" class="row">
+            <div class="col-12">
+                <div class="empty-state text-center">
+                    <i class="bi bi-cart-x text-muted" style="font-size: 5rem;"></i>
+                    <h3 class="mt-4 text-success">🎯 Booking đã được chọn!</h3>
+                    <p class="text-muted fs-5">
+                        Booking <strong class="text-primary">#<span th:text="${selectedBooking.id}"></span></strong> 
+                        (Phòng <strong class="text-primary" th:text="${selectedBooking.room != null ? selectedBooking.room.name : 'N/A'}"></strong>) 
+                        hiện tại chưa có dịch vụ nào được đặt
+                    </p>
+                    
+                    <div class="alert alert-info d-inline-block mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Trạng thái:</strong> 
+                <span class="badge ms-2" 
+                    th:classappend="${selectedBooking.status == 'Đã xác nhận'} ? 'bg-success' : (selectedBooking.status != null and selectedBooking.status.contains('thanh toán') ? 'bg-primary' : 'bg-warning')"
+                    th:text="${selectedBooking.status}"></span>
+                    </div>
+                    
+                    <div>
+                        <a th:href="@{'/khachhang/services/list?bookingId=' + ${selectedBooking.id}}" 
+                           class="btn btn-primary btn-lg btn-custom">
+                            <i class="bi bi-plus-circle"></i> 🛎️ Đặt dịch vụ ngay
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Default Empty State - Chưa chọn booking -->
         <div th:if="${selectedBooking == null}" class="row">
             <div class="col-12">
@@ -554,6 +584,10 @@ s<!DOCTYPE html>
                                     <td>
                                         <span class="badge fs-6 p-2" id="modalOrderStatus">-</span>
                                     </td>
+                                </tr>
+                                <tr id="modalProcessedByRow" style="display:none;">
+                                    <th class="bg-light">👷 Xử lý bởi</th>
+                                    <td id="modalProcessedBy">-</td>
                                 </tr>
                                 <tr id="modalUpdatedAtRow" style="display:none;">
                                     <th class="bg-light">🕒 Cập nhật gần nhất</th>
@@ -644,8 +678,10 @@ s<!DOCTYPE html>
 
             applyStatusBadgeClass(document.getElementById('modalOrderStatus'), button.dataset.status);
 
-            // Note only (removed admin fields)
+            // Note & admin fields
             toggleRow('modalOrderNoteSection', 'modalOrderNote', button.dataset.note);
+            toggleRow('modalProcessedByRow', 'modalProcessedBy', button.dataset.processedBy);
+            toggleRow('modalUpdatedAtRow', 'modalUpdatedAt', button.dataset.updatedAt);
 
             // Cancel form visibility
             const cancelForm = document.getElementById('modalCancelForm');

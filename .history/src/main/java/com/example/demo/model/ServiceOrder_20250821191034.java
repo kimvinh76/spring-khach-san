@@ -39,6 +39,10 @@ public class ServiceOrder {
     private String status; // Trạng thái: "Chờ xác nhận", "Đang xử lý", "Hoàn thành", "Từ chối"
     private Double totalAmount; // Tổng tiền = price * quantity
     private Long userId; // ID người dùng
+    
+    // Admin fields for processing (removed adminNote for customer interface)
+    private String processedBy; // Username or name of staff who processed
+    private LocalDateTime updatedAt; // Last updated timestamp by admin
 
     // Getter, Setter
     public Long getId() { return id; }
@@ -71,6 +75,15 @@ public class ServiceOrder {
     public void setStatus(String status) { this.status = status; }
     public Double getTotalAmount() { return totalAmount; }
     public void setTotalAmount(Double totalAmount) { this.totalAmount = totalAmount; }
+
+    public String getAdminNote() { return adminNote; }
+    public void setAdminNote(String adminNote) { this.adminNote = adminNote; }
+
+    public String getProcessedBy() { return processedBy; }
+    public void setProcessedBy(String processedBy) { this.processedBy = processedBy; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public Customer getCustomer() { return customer; }
     public void setCustomer(Customer customer) { this.customer = customer; }

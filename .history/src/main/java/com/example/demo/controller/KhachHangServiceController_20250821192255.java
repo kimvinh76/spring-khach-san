@@ -112,9 +112,6 @@ public class KhachHangServiceController {
                 if (selectedBooking != null) {
                     List<ServiceOrder> bookingServices = serviceOrderService.findByBookingId(bookingId);
                     orders = bookingServices != null ? bookingServices : new ArrayList<>();
-                    
-                    // KHÔNG gộp dịch vụ - hiển thị từng đơn riêng biệt để đồng bộ với admin
-                    // Mỗi lần đặt dịch vụ = 1 dòng riêng, trạng thái riêng biệt
                 } else {
                     redirectAttributes.addFlashAttribute("error", "Bạn không có quyền xem đơn dịch vụ này hoặc booking chưa hợp lệ");
                     return "redirect:/khachhang/services/my-orders";

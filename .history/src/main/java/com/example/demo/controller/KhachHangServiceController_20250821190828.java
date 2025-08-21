@@ -112,9 +112,6 @@ public class KhachHangServiceController {
                 if (selectedBooking != null) {
                     List<ServiceOrder> bookingServices = serviceOrderService.findByBookingId(bookingId);
                     orders = bookingServices != null ? bookingServices : new ArrayList<>();
-                    
-                    // KHÔNG gộp dịch vụ - hiển thị từng đơn riêng biệt để đồng bộ với admin
-                    // Mỗi lần đặt dịch vụ = 1 dòng riêng, trạng thái riêng biệt
                 } else {
                     redirectAttributes.addFlashAttribute("error", "Bạn không có quyền xem đơn dịch vụ này hoặc booking chưa hợp lệ");
                     return "redirect:/khachhang/services/my-orders";
@@ -285,7 +282,9 @@ public class KhachHangServiceController {
                 m.put("customerName", o.getCustomerName());
                 m.put("phone", o.getPhone());
                 m.put("note", o.getNote());
-                // Removed admin fields (processedBy, updatedAt) for customer interface
+                // Removed adminNote for customer interface
+                m.put("processedBy", o.getProcessedBy());
+                m.put("updatedAt", o.getUpdatedAt() != null ? o.getUpdatedAt().format(dtf) : null);
                 omap.add(m);
             }
             result.put("orders", omap);

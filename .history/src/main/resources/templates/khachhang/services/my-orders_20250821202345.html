@@ -1,11 +1,16 @@
-s<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý dịch vụ - Hotel Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <lin                    th:data-total="${order.totalAmount}"
+                    th:data-customer="${order.customerName}"
+                    th:data-phone="${order.phone}"
+                    th:data-time="${order.orderTime != null ? #temporals.format(order.orderTime, 'dd/MM/yyyy HH:mm:ss') : ''}"
+                    th:data-status="${order.status}"
+                    th:data-note="${order.note}">>https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         /* SIMPLIFIED CSS - NO COMPLEX ANIMATIONS OR TRANSFORMS */
         body {
