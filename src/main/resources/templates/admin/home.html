@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="admin/layout :: head" th:with="pageTitle='Bảng điều khiển - Quản lý khách sạn'"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+    <th:block th:replace="admin/layout :: navbar"/>
+    <th:block th:replace="admin/layout :: sidebar"/>
+    
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0 text-dark fade-in-up">Bảng điều khiển</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item active">Trang chủ</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Debug Test Button -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <button id="testMenuDebug" class="btn btn-warning">🔧 Test Menu Debug</button>
+                        <div id="debugOutput" class="mt-2 p-2 bg-light border rounded" style="display:none;">
+                            <h6>Debug Output:</h6>
+                            <div id="debugContent"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics cards -->
+                <div class="row">
+                    <!-- Total Rooms -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="small-box bg-info fade-in-up">
+                            <div class="inner">
+                                <h3>150</h3>
+                                <p>Tổng số phòng</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-bed"></i>
+                            </div>
+                            <a href="/admin/rooms" class="small-box-footer">
+                                Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Available Rooms -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="small-box bg-success fade-in-up" style="animation-delay: 0.1s;">
+                            <div class="inner">
+                                <h3>53</h3>
+                                <p>Phòng trống</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <a href="/admin/rooms?status=available" class="small-box-footer">
+                                Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Today's Bookings -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="small-box bg-warning fade-in-up" style="animation-delay: 0.2s;">
+                            <div class="inner">
+                                <h3>44</h3>
+                                <p>Đặt phòng hôm nay</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <a href="/admin/bookings?date=today" class="small-box-footer">
+                                Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Revenue -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="small-box bg-danger fade-in-up" style="animation-delay: 0.3s;">
+                            <div class="inner">
+                                <h3>65</h3>
+                                <p>Doanh thu (triệu VNĐ)</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-money-bill-wave pulse"></i>
+                            </div>
+                            <a href="/admin/reports/revenue" class="small-box-footer">
+                                Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Revenue Chart -->
+                        <div class="card fade-in-up" style="animation-delay: 0.4s;">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-pie mr-1"></i>
+                                    Doanh thu theo tháng
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="revenueChart" style="height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <!-- Occupancy Chart -->
+                        <div class="card fade-in-up" style="animation-delay: 0.5s;">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-bar mr-1"></i>
+                                    Tỷ lệ lấp đầy phòng
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="occupancyChart" style="height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activities -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card fade-in-up" style="animation-delay: 0.6s;">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-history mr-1"></i>
+                                    Hoạt động gần đây
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="timeline">
+                                    <div class="time-label">
+                                        <span class="bg-red">Hôm nay</span>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-envelope bg-blue"></i>
+                                        <div class="timeline-item">
+                                            <span class="time"><i class="fas fa-clock"></i> 12:05</span>
+                                            <h3 class="timeline-header">Đặt phòng mới</h3>
+                                            <div class="timeline-body">
+                                                Khách hàng Nguyễn Văn A đã đặt phòng VIP101 từ 01/01/2025 đến 03/01/2025
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-user bg-green"></i>
+                                        <div class="timeline-item">
+                                            <span class="time"><i class="fas fa-clock"></i> 10:30</span>
+                                            <h3 class="timeline-header">Khách hàng mới</h3>
+                                            <div class="timeline-body">
+                                                Trần Thị B đã đăng ký thành viên
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-check bg-yellow"></i>
+                                        <div class="timeline-item">
+                                            <span class="time"><i class="fas fa-clock"></i> 09:15</span>
+                                            <h3 class="timeline-header">Check-in hoàn thành</h3>
+                                            <div class="timeline-body">
+                                                Phòng DEL203 - Khách hàng Lê Văn C đã check-in
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <i class="fas fa-clock bg-gray"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <th:block th:replace="admin/layout :: footer"/>
+</div>
+
+<th:block th:replace="admin/layout :: scripts"/>
+
+</body>
+</html>

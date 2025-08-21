@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Services Navigation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12 text-center">
+            <h1 class="mb-5">
+                <i class="bi bi-building text-primary"></i>
+                Hotel Services Demo
+            </h1>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <a href="/services/menu" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-grid-3x3-gap"></i><br>
+                        Menu chính dịch vụ
+                    </a>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <a href="/services" class="btn btn-success btn-lg w-100">
+                        <i class="bi bi-cart-plus"></i><br>
+                        Đặt dịch vụ mới
+                    </a>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <a href="/services/my-orders" class="btn btn-info btn-lg w-100">
+                        <i class="bi bi-list-check"></i><br>
+                        Dịch vụ của tôi
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6 mb-3">
+                    <a href="/services/history" class="btn btn-warning btn-lg w-100">
+                        <i class="bi bi-clock-history"></i><br>
+                        Lịch sử dịch vụ
+                    </a>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <a href="/rooms" class="btn btn-secondary btn-lg w-100">
+                        <i class="bi bi-house"></i><br>
+                        Về trang chủ
+                    </a>
+                </div>
+            </div>
+            
+            <div class="mt-5">
+                <h4>Test URLs:</h4>
+                <ul class="list-unstyled">
+                    <li><a href="/services/menu" target="_blank">Menu chính: /services/menu</a></li>
+                    <li><a href="/services" target="_blank">Danh sách dịch vụ: /services</a></li>
+                    <li><a href="/services/my-orders" target="_blank">Đơn hàng của tôi: /services/my-orders</a></li>
+                    <li><a href="/services/history" target="_blank">Lịch sử: /services/history</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

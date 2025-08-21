@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết booking - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                <div class="container-fluid">
+                    <span class="navbar-brand">
+                        <i class="bi bi-shield-check"></i>
+                        Admin - Chi tiết Booking #<span th:text="${booking.id}"></span>
+                    </span>
+                    <div class="navbar-nav ms-auto">
+                        <a class="nav-link" href="/admin/bookings">
+                            <i class="bi bi-arrow-left"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Booking Info -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="bi bi-person"></i> Thông tin khách hàng</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Tên:</strong> <span th:text="${booking.customerName}"></span></p>
+                    <p><strong>Email:</strong> <span th:text="${booking.email}"></span></p>
+                    <p><strong>Điện thoại:</strong> <span th:text="${booking.phone}"></span></p>
+                    <p><strong>Số khách:</strong> <span th:text="${booking.guestCount}"></span></p>
+                    <p><strong>Ghi chú:</strong> <span th:text="${booking.note ?: 'Không có'}"></span></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="bi bi-calendar"></i> Thông tin đặt phòng</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Phòng:</strong> 
+                        <span class="badge bg-info" th:text="${booking.room?.name}"></span>
+                        <small th:text="${booking.room?.roomType?.tenLoai}"></small>
+                    </p>
+                    <p><strong>Ngày đặt:</strong> <span th:text="${#temporals.format(booking.bookingDate, 'dd/MM/yyyy HH:mm')}"></span></p>
+                    <p><strong>Nhận phòng:</strong> <span th:text="${#temporals.format(booking.checkIn, 'dd/MM/yyyy')}"></span></p>
+                    <p><strong>Trả phòng:</strong> <span th:text="${#temporals.format(booking.checkOut, 'dd/MM/yyyy')}"></span></p>
+                    <p><strong>Số đêm:</strong> <span th:text="${booking.totalNights}"></span></p>
+                    <p><strong>Tiền phòng:</strong> 
+                        <span class="text-primary fw-bold" th:text="${roomTotal != null ? #numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT') : (booking.totalAmount != null ? #numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT') : '0')} + ' VNĐ'"></span>
+                    </p>
+                    <!-- DEBUG: raw values to help trace missing roomTotal -->
+                    <p class="text-muted small">
+                        <strong>DEBUG raw totals:</strong>
+                        booking.totalAmount=<span th:text="${booking.totalAmount}"></span>,
+                        roomTotal=<span th:text="${roomTotal}"></span>,
+                        serviceTotal=<span th:text="${serviceTotal}"></span>
+                    </p>
+                    <p><strong>Trạng thái:</strong> 
+                <span class="badge" 
+                    th:classappend="${booking.status == 'Đã xác nhận' ? 'bg-success' : 
+                                (booking.status == 'Chờ xác nhận' ? 'bg-warning' : 
+                                (booking.status != null and booking.status.contains('thanh toán') ? 'bg-primary' : 'bg-danger'))}"
+                    th:text="${booking.status}"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services List -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5><i class="bi bi-gear"></i> Dịch vụ đã đặt</h5>
+                    <a href="/admin/services" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-right"></i> Trang quản lý dịch vụ
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div th:if="${services.empty}" class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Khách hàng chưa đặt dịch vụ nào.
+                    </div>
+                    
+                    <div th:if="${!services.empty}" class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên dịch vụ</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="service : ${services}">
+                                    <td th:text="${service.id}"></td>
+                                    <td th:text="${service.serviceName}"></td>
+                                    <td th:text="${service.quantity}"></td>
+                                    <td th:text="${#numbers.formatDecimal(service.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                    <td th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${service.status == 'Hoàn thành' ? 'bg-success' : 
+                                                              service.status == 'Đang xử lý' ? 'bg-warning' : 
+                                                              service.status == 'Chờ xác nhận' ? 'bg-info' : 'bg-danger'}"
+                                              th:text="${service.status}"></span>
+                                    </td>
+                                    <td>
+                                        <!-- Quick Actions cho dịch vụ -->
+                                        <div th:if="${service.status == 'Chờ xác nhận'}" class="btn-group btn-group-sm">
+                                            <form th:action="@{/admin/services/{id}/confirm(id=${service.id})}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-success btn-sm" 
+                                                        onclick="return confirm('Xác nhận dịch vụ này?')">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        
+                                        <div th:if="${service.status == 'Đang xử lý'}" class="btn-group btn-group-sm">
+                                            <form th:action="@{/admin/services/{id}/complete(id=${service.id})}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-success btn-sm" 
+                                                        onclick="return confirm('Đánh dấu hoàn thành?')">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <!-- Services Total -->
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Tổng tiền dịch vụ:</strong>
+                                </div>
+                                <div class="col-md-6 text-end">
+                        <span class="text-success fw-bold fs-5" 
+                            th:text="${serviceTotal != null ? #numbers.formatDecimal(serviceTotal, 0, 'COMMA', 0, 'POINT') : '0'} + ' VNĐ'"></span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Tiền phòng:</strong>
+                                </div>
+                                <div class="col-md-6 text-end">
+                        <span class="text-primary fw-bold" 
+                            th:text="${roomTotal != null ? #numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT') : (booking.totalAmount != null ? #numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT') : '0')} + ' VNĐ'"></span>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong class="fs-5">TỔNG CỘNG:</strong>
+                                </div>
+                                <div class="col-md-6 text-end">
+                        <span class="text-danger fw-bold fs-4" 
+                            th:text="${#numbers.formatDecimal((roomTotal != null ? roomTotal : (booking.totalAmount != null ? booking.totalAmount : 0)) + (serviceTotal ?: 0), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-tools"></i> Thao tác</h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <a href="/admin/bookings" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                        </a>
+                        
+                        <!-- Xác nhận booking -->
+                        <form th:if="${booking.status == 'Chờ xác nhận'}" 
+                              th:action="@{'/admin/bookings/' + ${booking.id} + '/confirm'}" 
+                              method="post" class="d-inline"
+                              onsubmit="return confirm('Xác nhận booking này?')">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> Xác nhận Booking
+                            </button>
+                        </form>
+                        
+                        <a href="/admin/services" class="btn btn-primary">
+                            <i class="bi bi-arrow-right"></i> Trang quản lý dịch vụ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

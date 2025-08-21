@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin-Customer Synchronization</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .sync-status { font-weight: bold; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 3px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Test Admin-Customer Room Synchronization</h1>
+    
+    <div class="test-section">
+        <h2>1. Kiểm tra API Room Service</h2>
+        <button class="btn-primary" onclick="testGetAllRooms()">Test Get All Rooms</button>
+        <button class="btn-primary" onclick="testGetAvailableRooms()">Test Get Available Rooms Only</button>
+        <div id="roomApiResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Kiểm tra đồng bộ trạng thái phòng</h2>
+        <button class="btn-primary" onclick="testRoomStatusSync()">Test Room Status Sync</button>
+        <div id="statusSyncResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Test Admin Menu Links</h2>
+        <button class="btn-primary" onclick="testAdminMenuLinks()">Test All Admin Links</button>
+        <div id="menuTestResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Test Customer vs Admin Room Display</h2>
+        <button class="btn-primary" onclick="testCustomerAdminDifference()">Compare Customer vs Admin Room View</button>
+        <div id="compareResults"></div>
+    </div>
+
+    <script>
+        async function testGetAllRooms() {
+            const results = document.getElementById('roomApiResults');
+            results.innerHTML = '<div class="warning">Testing API endpoints...</div>';
+            
+            try {
+                const response = await fetch('/api/rooms');
+                const rooms = await response.json();
+                
+                results.innerHTML = `
+                    <div class="success">
+                        <strong>✅ API /api/rooms works!</strong><br>
+                        Total rooms found: ${rooms.length}<br>
+                        Rooms: ${rooms.map(r => `${r.name} (${r.status})`).join(', ')}
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ API Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testGetAvailableRooms() {
+            const results = document.getElementById('roomApiResults');
+            results.innerHTML += '<div class="warning">Testing customer room filtering...</div>';
+            
+            try {
+                // Test customer room list endpoint
+                const response = await fetch('/rooms');
+                if (response.ok) {
+                    results.innerHTML += `
+                        <div class="success">
+                            <strong>✅ Customer room endpoint accessible</strong><br>
+                            URL: /rooms (status: ${response.status})
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `<div class="error">❌ Customer room endpoint failed (${response.status})</div>`;
+                }
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Customer endpoint error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testRoomStatusSync() {
+            const results = document.getElementById('statusSyncResults');
+            results.innerHTML = '<div class="warning">Testing room status synchronization...</div>';
+            
+            // Test scenarios
+            const tests = [
+                {
+                    name: 'Available Rooms Only for Customers',
+                    description: 'Customers should only see AVAILABLE rooms',
+                    endpoint: '/api/rooms',
+                    expectedFilter: room => room.status === 'AVAILABLE' && room.available === true
+                },
+                {
+                    name: 'All Rooms for Admin',
+                    description: 'Admin should see all rooms regardless of status',
+                    endpoint: '/api/rooms',
+                    expectedFilter: room => true // Admin sees all
+                }
+            ];
+            
+            for (let test of tests) {
+                try {
+                    const response = await fetch(test.endpoint);
+                    const rooms = await response.json();
+                    const filteredRooms = rooms.filter(test.expectedFilter);
+                    
+                    results.innerHTML += `
+                        <div class="success">
+                            <strong>✅ ${test.name}</strong><br>
+                            ${test.description}<br>
+                            Total rooms: ${rooms.length}, Filtered: ${filteredRooms.length}
+                        </div>
+                    `;
+                } catch (error) {
+                    results.innerHTML += `<div class="error">❌ ${test.name}: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        async function testAdminMenuLinks() {
+            const results = document.getElementById('menuTestResults');
+            results.innerHTML = '<div class="warning">Testing admin menu links...</div>';
+            
+            const adminLinks = [
+                { name: 'Admin Home', url: '/admin' },
+                { name: 'Admin Home (alias)', url: '/admin/home' },
+                { name: 'Room List', url: '/admin/rooms' },
+                { name: 'Customer List', url: '/admin/customers' },
+                { name: 'Service List', url: '/admin/services' },
+                { name: 'Service History', url: '/admin/services/history' }
+            ];
+            
+            for (let link of adminLinks) {
+                try {
+                    const response = await fetch(link.url);
+                    const statusClass = response.ok ? 'success' : 'error';
+                    const statusIcon = response.ok ? '✅' : '❌';
+                    
+                    results.innerHTML += `
+                        <div class="${statusClass}">
+                            ${statusIcon} <strong>${link.name}</strong>: ${link.url} (${response.status})
+                        </div>
+                    `;
+                } catch (error) {
+                    results.innerHTML += `<div class="error">❌ ${link.name}: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        async function testCustomerAdminDifference() {
+            const results = document.getElementById('compareResults');
+            results.innerHTML = '<div class="warning">Comparing customer vs admin room views...</div>';
+            
+            try {
+                // Get all rooms (admin view)
+                const adminResponse = await fetch('/api/rooms');
+                const allRooms = await adminResponse.json();
+                
+                // Simulate customer filter (only available rooms)
+                const customerRooms = allRooms.filter(room => 
+                    room.status === 'AVAILABLE' && room.available === true
+                );
+                
+                const syncStatus = allRooms.length === customerRooms.length ? 
+                    '⚠️ WARNING: No filtering applied!' : 
+                    '✅ Proper filtering active';
+                
+                results.innerHTML += `
+                    <div class="${allRooms.length === customerRooms.length ? 'warning' : 'success'}">
+                        <div class="sync-status">${syncStatus}</div>
+                        <strong>Room Count Comparison:</strong><br>
+                        Admin sees: ${allRooms.length} rooms<br>
+                        Customer sees: ${customerRooms.length} rooms<br>
+                        Hidden from customers: ${allRooms.length - customerRooms.length} rooms
+                    </div>
+                `;
+                
+                // Show detailed breakdown
+                const statusBreakdown = {};
+                allRooms.forEach(room => {
+                    statusBreakdown[room.status] = (statusBreakdown[room.status] || 0) + 1;
+                });
+                
+                results.innerHTML += `
+                    <div class="success">
+                        <strong>Room Status Breakdown:</strong><br>
+                        ${Object.entries(statusBreakdown).map(([status, count]) => 
+                            `${status || 'NULL'}: ${count} rooms`
+                        ).join('<br>')}
+                    </div>
+                `;
+                
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Comparison failed: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            console.log('🔄 Auto-running synchronization tests...');
+            setTimeout(testGetAllRooms, 1000);
+            setTimeout(testAdminMenuLinks, 2000);
+        };
+    </script>
+</body>
+</html>

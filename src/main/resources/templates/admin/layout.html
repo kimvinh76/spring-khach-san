@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<!-- Head fragment -->
+<head th:fragment="head">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle} ?: 'Quản lý khách sạn'">Quản lý khách sạn</title>
+    
+    <!-- Bootstrap 4 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- AdminLTE CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css" rel="stylesheet" crossorigin="anonymous">
+    
+    <style>
+        /* Treeview menu styles */
+        .nav-treeview {
+            display: none !important;
+            padding-left: 0;
+            margin-top: 0;
+        }
+        
+        .nav-item.menu-open > .nav-treeview {
+            display: block !important;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .nav-item.menu-open > .nav-link .fas.fa-angle-left {
+            transform: rotate(-90deg) !important;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-link .fas.fa-angle-left {
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-treeview .nav-link {
+            padding-left: 2.5rem !important;
+            font-size: 0.9rem;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        
+        /* Sidebar styles */
+        .nav-sidebar .nav-link {
+            border-radius: 0.25rem;
+            margin: 0.125rem 0.5rem;
+            color: #c2c7d0 !important;
+        }
+        
+        .nav-sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.1) !important;
+            color: #fff !important;
+        }
+        
+        .nav-sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.2) !important;
+            color: #fff !important;
+            font-weight: bold;
+        }
+        
+        .nav-treeview .nav-link:hover {
+            background-color: rgba(255,255,255,0.1) !important;
+            color: #fff !important;
+        }
+        
+        .nav-treeview .nav-link.active {
+            background-color: rgba(255,255,255,0.2) !important;
+            color: #fff !important;
+            font-weight: bold;
+        }
+        
+        /* Keep parent menu slightly highlighted when child is active */
+        .nav-item.menu-open > .nav-link {
+            background-color: rgba(255,255,255,0.05) !important;
+        }
+    </style>
+</head>
+
+<!-- Navbar fragment -->
+<nav th:fragment="navbar" class="main-header navbar navbar-expand navbar-dark bg-primary" aria-label="Admin navigation">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            <button class="nav-link btn btn-link text-white" data-widget="pushmenu" style="border: none; background: none;">
+                <i class="fas fa-bars"></i>
+            </button>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="/admin/home" class="nav-link">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+        </li>
+    </ul>
+
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+        <!-- Notifications Dropdown Menu -->
+        <li class="nav-item dropdown">
+            <a class="nav-link" data-toggle="dropdown" href="#">
+                <i class="far fa-bell"></i>
+                <span class="badge badge-warning navbar-badge">3</span>
+            </a>
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                <span class="dropdown-item-text">3 thông báo mới</span>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-envelope mr-2"></i> Đặt phòng mới
+                    <span class="float-right text-muted text-sm">3 phút</span>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item dropdown-footer">Xem tất cả thông báo</a>
+            </div>
+        </li>
+        <!-- Fullscreen -->
+        <li class="nav-item">
+            <button class="nav-link btn btn-link text-white" data-widget="fullscreen" style="border: none; background: none;">
+                <i class="fas fa-expand-arrows-alt"></i>
+            </button>
+        </li>
+    </ul>
+</nav>
+
+<!-- Sidebar fragment -->
+<aside th:fragment="sidebar" class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="/admin/home" class="brand-link">
+        <img src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" alt="Hotel Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">Quản lý khách sạn</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel -->
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="https://adminlte.io/themes/v3/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Avatar">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">Quản trị viên</a>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2" aria-label="Admin sidebar menu">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" data-accordion="false">
+                <li class="nav-item">
+                    <a href="/admin/home" class="nav-link">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Bảng điều khiển</p>
+                    </a>
+                </li>
+                <li class="nav-item" id="room-management">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-bed"></i>
+                        <p>
+                            Quản lý phòng
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/rooms" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Danh sách phòng</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/roomtypes" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Loại phòng</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/rooms/add" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Thêm phòng mới</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item" id="booking-management">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-calendar-check"></i>
+                        <p>
+                            Đặt phòng
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/bookings" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Danh sách đặt phòng</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/bookings/new" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Tạo đặt phòng mới</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Dịch vụ -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-concierge-bell"></i>
+                        <p>
+                            Dịch vụ
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/services" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Danh sách dịch vụ</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/service-orders" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Đơn hàng dịch vụ</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-users"></i>
+                        <p>
+                            Khách hàng
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/customers" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Danh sách khách hàng</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-chart-pie"></i>
+                        <p>
+                            Báo cáo
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/reports/revenue" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Doanh thu</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/reports/occupancy" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Tỷ lệ lấp đầy</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>
+                            Cài đặt
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/settings/general" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Cài đặt chung</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/settings/users" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Quản lý người dùng</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</aside>
+
+<!-- Footer fragment -->
+<footer th:fragment="footer" class="main-footer">
+    <strong>Copyright &copy; 2025 <a href="#">Hệ thống quản lý khách sạn</a>.</strong>
+    Tất cả quyền được bảo lưu.
+    <div class="float-right d-none d-sm-inline-block">
+        <b>Phiên bản</b> 1.0.0
+    </div>
+</footer>
+
+<!-- Scripts fragment -->
+<div th:fragment="scripts">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+    <!-- Bootstrap 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <!-- AdminLTE -->
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js" crossorigin="anonymous"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" crossorigin="anonymous"></script>
+    
+    <script>
+        $(document).ready(function() {
+            console.log('AdminLTE Menu Initialization Started');
+            
+            // Function to determine which menu should be open based on URL
+            function setActiveMenuFromUrl() {
+                var currentPath = window.location.pathname;
+                console.log('Current URL path:', currentPath);
+                
+                // Clear all active states first
+                $('.nav-sidebar .nav-link').removeClass('active');
+                $('.nav-sidebar .nav-item').removeClass('menu-open');
+                $('.nav-sidebar .nav-treeview').hide();
+                
+                // Define menu mappings
+                var menuMappings = {
+                    'rooms': ['rooms', 'roomtypes', 'room-types'],
+                    'bookings': ['bookings', 'booking'],
+                    'services': ['services', 'service'],
+                    'customers': ['customers', 'customer'],
+                    'reports': ['reports', 'statistics'],
+                    'settings': ['settings', 'profile']
+                };
+                
+                // Check for submenu matches
+                var foundMatch = false;
+                $('.nav-sidebar .nav-item').each(function() {
+                    var $menuItem = $(this);
+                    var $submenu = $menuItem.find('.nav-treeview');
+                    
+                    if ($submenu.length > 0) {
+                        // Check if any submenu link matches current path
+                        $submenu.find('.nav-link').each(function() {
+                            var href = $(this).attr('href');
+                            if (href && currentPath.includes(href)) {
+                                // Found matching submenu item
+                                console.log('Found matching submenu:', href);
+                                $(this).addClass('active');
+                                $menuItem.addClass('menu-open');
+                                $submenu.show();
+                                foundMatch = true;
+                                return false; // break out of loop
+                            }
+                        });
+                        
+                        if (foundMatch) return false; // break out of outer loop
+                    } else {
+                        // Check regular menu item
+                        var $link = $menuItem.find('> .nav-link');
+                        var href = $link.attr('href');
+                        if (href && currentPath.includes(href)) {
+                            console.log('Found matching menu:', href);
+                            $link.addClass('active');
+                            foundMatch = true;
+                            return false;
+                        }
+                    }
+                });
+                
+                // Fallback: if no exact match, check menu mappings
+                if (!foundMatch) {
+                    Object.keys(menuMappings).forEach(function(menuKey) {
+                        menuMappings[menuKey].forEach(function(pathPattern) {
+                            if (currentPath.includes(pathPattern)) {
+                                console.log('Pattern match found:', pathPattern, 'for menu:', menuKey);
+                                
+                                // Find and open the corresponding menu
+                                $('.nav-sidebar .nav-item').each(function() {
+                                    var $menuItem = $(this);
+                                    var $submenu = $menuItem.find('.nav-treeview');
+                                    var menuText = $menuItem.find('> .nav-link').text().toLowerCase();
+                                    
+                                    if (menuText.includes(menuKey) || 
+                                        (menuKey === 'rooms' && menuText.includes('phòng')) ||
+                                        (menuKey === 'bookings' && menuText.includes('đặt')) ||
+                                        (menuKey === 'services' && menuText.includes('dịch vụ')) ||
+                                        (menuKey === 'customers' && menuText.includes('khách')) ||
+                                        (menuKey === 'reports' && menuText.includes('báo cáo')) ||
+                                        (menuKey === 'settings' && menuText.includes('cài đặt'))) {
+                                        
+                                        $menuItem.addClass('menu-open');
+                                        $submenu.show();
+                                        console.log('Auto-opened menu:', menuText);
+                                        
+                                        // Also try to match specific submenu
+                                        $submenu.find('.nav-link').each(function() {
+                                            var href = $(this).attr('href');
+                                            if (href && currentPath.includes(href)) {
+                                                $(this).addClass('active');
+                                            }
+                                        });
+                                        
+                                        foundMatch = true;
+                                        return false;
+                                    }
+                                });
+                                
+                                if (foundMatch) return false;
+                            }
+                        });
+                        if (foundMatch) return false;
+                    });
+                }
+            }
+            
+            // Set menu state based on URL on page load
+            setActiveMenuFromUrl();
+            
+            // Simple and effective menu toggle
+            $('.nav-sidebar .nav-item').each(function() {
+                var $menuItem = $(this);
+                var $mainLink = $menuItem.find('> .nav-link');
+                var $submenu = $menuItem.find('.nav-treeview');
+                
+                if ($submenu.length > 0) {
+                    console.log('Setting up menu:', $mainLink.find('p').first().text().trim());
+                    
+                    $mainLink.off('click').on('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        var menuText = $(this).find('p').first().text().trim();
+                        console.log('Menu clicked:', menuText);
+                        
+                        // Toggle current menu
+                        if ($menuItem.hasClass('menu-open')) {
+                            $menuItem.removeClass('menu-open');
+                            $submenu.slideUp(200);
+                            console.log('Menu closed:', menuText);
+                        } else {
+                            // Close all other menus first
+                            $('.nav-sidebar .nav-item').not($menuItem).removeClass('menu-open');
+                            $('.nav-sidebar .nav-treeview').not($submenu).slideUp(200);
+                            
+                            $menuItem.addClass('menu-open');
+                            $submenu.slideDown(200);
+                            console.log('Menu opened:', menuText);
+                        }
+                        
+                        return false;
+                    });
+                }
+            });
+            
+            // Handle submenu clicks
+            $('.nav-sidebar .nav-treeview .nav-link').on('click', function(e) {
+                var href = $(this).attr('href');
+                if (href && href !== '#') {
+                    console.log('Navigating to submenu:', href);
+                    // Let it navigate normally
+                } else {
+                    e.preventDefault();
+                }
+            });
+            
+            // Store open menu state before page navigation
+            window.addEventListener('beforeunload', function() {
+                var openMenus = [];
+                $('.nav-sidebar .nav-item.menu-open').each(function() {
+                    var menuText = $(this).find('> .nav-link p').first().text().trim();
+                    if (menuText) {
+                        openMenus.push(menuText);
+                    }
+                });
+                localStorage.setItem('openMenus', JSON.stringify(openMenus));
+                console.log('Saved open menus:', openMenus);
+            });
+            
+            // Restore menu state from localStorage (backup method)
+            try {
+                var savedMenus = JSON.parse(localStorage.getItem('openMenus') || '[]');
+                if (savedMenus.length > 0) {
+                    console.log('Attempting to restore menus:', savedMenus);
+                    savedMenus.forEach(function(menuText) {
+                        $('.nav-sidebar .nav-item').each(function() {
+                            var $item = $(this);
+                            var currentMenuText = $item.find('> .nav-link p').first().text().trim();
+                            if (currentMenuText === menuText) {
+                                $item.addClass('menu-open');
+                                $item.find('.nav-treeview').show();
+                                console.log('Restored menu:', menuText);
+                            }
+                        });
+                    });
+                }
+            } catch (e) {
+                console.log('Error restoring menu state:', e);
+            }
+            
+            console.log('Menu initialization completed');
+            
+            // Debug function
+            window.debugMenu = function() {
+                var debug = [];
+                debug.push('=== MENU DEBUG INFO ===');
+                
+                // Check if nav-sidebar exists
+                var $sidebar = $('.nav-sidebar');
+                debug.push('Sidebar found: ' + ($sidebar.length > 0 ? 'YES' : 'NO'));
+                
+                // Check each menu item
+                $sidebar.find('.nav-item').each(function(index) {
+                    var $item = $(this);
+                    var $link = $item.find('> .nav-link');
+                    var $submenu = $item.find('.nav-treeview');
+                    var menuText = $link.text().trim();
+                    
+                    debug.push('Menu ' + (index + 1) + ': "' + menuText + '"');
+                    debug.push('  - Has submenu: ' + ($submenu.length > 0 ? 'YES (' + $submenu.find('.nav-item').length + ' items)' : 'NO'));
+                    debug.push('  - Is open: ' + ($item.hasClass('menu-open') ? 'YES' : 'NO'));
+                    debug.push('  - Submenu visible: ' + ($submenu.is(':visible') ? 'YES' : 'NO'));
+                });
+                
+                return debug.join('\n');
+            };
+            
+            // Debug button click handler
+            $(document).on('click', '#testMenuDebug', function() {
+                $('#debugOutput').show();
+                $('#debugContent').html('<pre>' + window.debugMenu() + '</pre>');
+                
+                // Test open first menu with submenu
+                var $firstMenuWithSub = $('.nav-sidebar .nav-item').filter(function() {
+                    return $(this).find('.nav-treeview').length > 0;
+                }).first();
+                
+                if ($firstMenuWithSub.length > 0) {
+                    $firstMenuWithSub.addClass('menu-open');
+                    $firstMenuWithSub.find('.nav-treeview').show();
+                    $('#debugContent').append('<br><strong>Manually opened first menu with submenu</strong>');
+                }
+            });
+        }); // End of $(document).ready
+        
+        // Initialize charts after delay
+        setTimeout(function() {
+            initCharts();
+        }, 500);
+        
+        function initCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart');
+            if (revenueCtx) {
+                new Chart(revenueCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
+                        datasets: [{
+                            label: 'Doanh thu (triệu VNĐ)',
+                            data: [12, 19, 30, 25, 35, 40],
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Occupancy Chart
+            const occupancyCtx = document.getElementById('occupancyChart');
+            if (occupancyCtx) {
+                new Chart(occupancyCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Đã đặt', 'Trống', 'Bảo trì'],
+                        datasets: [{
+                            data: [65, 30, 5],
+                            backgroundColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(54, 162, 235)',
+                                'rgb(255, 205, 86)'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</div>
+
+</html>

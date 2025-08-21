@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý dịch vụ - Hotel Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            scroll-behavior: smooth;
+        }
+        .order-card {
+            transition: transform 0.2s ease-in-out;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .order-card.loaded {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        .order-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.8rem;
+        }
+        .total-amount {
+            font-weight: 700;
+            color: #28a745;
+            font-size: 1.1rem;
+        }
+        .booking-selector {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .payment-summary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+        }
+        .service-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
+        /* Performance optimizations */
+        .order-card img {
+            will-change: transform;
+        }
+        
+        /* Reduce layout thrashing */
+        .container-fluid {
+            contain: layout;
+        }
+        
+    
+        
+        /* Preload animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+    
+        /* Heading tweaks */
+        .service-header h2 {
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .empty-state {
+            background: white;
+            border-radius: 15px;
+            padding: 3rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <div th:replace="~{khachhang/fragments/home-navbar :: navbar}"></div>
+    
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="service-header text-center">
+            <h2 class="mb-2">
+                <i class="bi bi-gear-fill"></i> Quản lý đơn hàng của tôi
+            </h2>
+            <p class="mb-3">Theo dõi và quản lý các dịch vụ đã đặt cho booking của bạn</p>
+            
+            <!-- Quick Actions -->
+            <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                <a href="/booking/history" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-clock-history"></i> Lịch sử booking
+                </a>
+                <a th:if="${selectedBooking != null}" 
+                   th:href="@{'/booking/invoice/' + ${selectedBooking.id}}" 
+                   class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-receipt"></i> Hóa đơn booking này
+                </a>
+                <a href="/khachhang/services/list" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-list"></i> Tất cả dịch vụ
+                </a>
+                <a href="/rooms" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-house"></i> Đặt phòng mới
+                </a>
+            </div>
+        </div>
+
+        <!-- Booking Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card booking-selector text-white">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-calendar-check"></i> Chọn đơn đặt phòng để xem đặt phòng dịch vụ
+                        </h5>
+                        <form method="get" action="/khachhang/services/my-orders">
+                            <div class="row align-items-end">
+                                <div class="col-md-9">
+                                    <label for="bookingSelect" class="form-label text-white fw-bold">Booking của bạn:</label>
+                    <select name="bookingId" id="bookingSelect" class="form-select form-select-lg" 
+                        data-debounce="300">
+                                        <option value="">🏨 -- Chọn booking để xem dịch vụ --</option>
+                                        <option th:each="booking : ${paidBookings}"
+                                                th:value="${booking.id}"
+                                                th:selected="${selectedBooking != null and selectedBooking.id == booking.id}"
+                                                th:text="'🛏️ Booking #' + ${booking.id} + ' - Phòng ' + 
+                                                       (${booking.room != null ? booking.room.name : 'N/A'}) + 
+                                                       ' (' + ${booking.status} + ')'">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" id="bookingSubmitBtn" class="btn btn-light btn-lg btn-custom w-100">
+                                        <i class="bi bi-search"></i> Xem đơn đặt phòng và dịch vụ
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Selected Booking Info -->
+    <div id="ordersContainer" th:fragment="ordersFragment">
+    <!-- Default content for when no booking selected -->
+    <div th:unless="${selectedBooking != null}" class="empty-state text-center p-5">
+        <i class="bi bi-calendar-check" style="font-size: 4rem; color: #6c757d;"></i>
+        <h3 class="mt-3 text-muted">🏨 Chọn booking để bắt đầu</h3>
+        <p class="text-muted">Sử dụng dropdown ở trên để chọn booking bạn muốn quản lý dịch vụ</p>
+        <div class="alert alert-info mt-3" role="alert">
+            <strong>💡 Hướng dẫn:</strong> Chọn một booking từ danh sách trên để xem các dịch vụ đã đặt
+        </div>
+    </div>
+    
+    <div th:if="${selectedBooking != null}">
+        <!-- Booking Info Display -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            🏨 <strong>Booking được chọn:</strong> #<span th:text="${selectedBooking.id}"></span> 
+                            - Phòng <strong th:text="${selectedBooking.room != null ? selectedBooking.room.name : 'N/A'}"></strong>
+                        </h6>
+                        <small class="text-muted">
+                            📅 <span th:text="${selectedBooking.checkIn != null ? #temporals.format(selectedBooking.checkIn, 'dd/MM/yyyy') : 'N/A'}"></span> 
+                            đến <span th:text="${selectedBooking.checkOut != null ? #temporals.format(selectedBooking.checkOut, 'dd/MM/yyyy') : 'N/A'}"></span>
+                            | Trạng thái: <span class="badge bg-primary" th:text="${selectedBooking.status ?: 'N/A'}"></span>
+                        </small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{'/booking/invoice/' + ${selectedBooking.id}}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-receipt"></i> Hóa đơn
+                        </a>
+                        <a th:href="@{'/booking/details/' + ${selectedBooking.id}}" 
+                           class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-eye"></i> Chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orders Display -->
+        <div th:if="${serviceOrders == null or #lists.isEmpty(serviceOrders)}">
+            <div class="empty-state text-center p-5">
+                <i class="bi bi-box" style="font-size: 4rem; color: #6c757d;"></i>
+                <h3 class="mt-3 text-muted">📭 Chưa có dịch vụ</h3>
+                <p class="text-muted">Bạn chưa đặt dịch vụ cho booking này.</p>
+                <a th:href="@{/khachhang/services/list(bookingId=${selectedBooking.id})}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Đặt dịch vụ ngay
+                </a>
+            </div>
+        </div>
+        
+        <div th:if="${serviceOrders != null and not #lists.isEmpty(serviceOrders)}">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="alert alert-success d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <h5 class="mb-1">🎉 Dịch vụ đã đặt cho Booking <span th:text="|#${selectedBooking.id}|"></span></h5>
+                            <small>Phòng <strong th:text="${selectedBooking.room?.name ?: 'N/A'}"></strong> | Tổng <strong th:text="${#lists.size(serviceOrders)}"></strong> dịch vụ</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Service Orders List -->
+            <div class="row">
+                <div class="col-lg-6 col-md-6 mb-4" th:each="order : ${serviceOrders}">
+                    <div class="card order-card h-100 loaded">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                            <h6 class="mb-0 fw-bold">
+                                <i class="bi bi-star-fill"></i> 
+                                <span th:text="${order.service?.name ?: 'N/A'}"></span>
+                            </h6>
+                            <span class="badge" 
+                                  th:classappend="${order.status != null and (#strings.contains(order.status, 'Hoàn thành') or #strings.contains(order.status, 'Complete'))} ? 'bg-success' : (${order.status != null and #strings.contains(order.status, 'Đang xử lý')} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                  th:text="${order.status ?: 'Chờ xử lý'}"></span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Price and Quantity Display -->
+                            <div class="row mb-3">
+                                <div class="col-6 text-center">
+                                    <i class="bi bi-currency-dollar text-primary" style="font-size: 2rem;"></i>
+                                    <p class="mb-1 small text-muted">Giá đơn vị</p>
+                                    <p class="fw-bold text-primary">
+                                        <span th:text="${#numbers.formatInteger(order.price ?: 0, 0, 'COMMA')}">0</span> VNĐ
+                                    </p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <i class="bi bi-box text-success" style="font-size: 2rem;"></i>
+                                    <p class="mb-1 small text-muted">Số lượng</p>
+                                    <p class="fw-bold text-success">
+                                        <span th:text="${order.quantity ?: 0}">0</span> đơn vị
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Order Info -->
+                            <div class="bg-light p-3 rounded mb-3">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">🕒 Thời gian đặt:</small>
+                                        <br><small class="fw-bold">
+                                            <span th:text="${order.orderTime != null ? #temporals.format(order.orderTime, 'dd/MM/yyyy HH:mm') : 'N/A'}"></span>
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">👤 Khách hàng:</small>
+                                        <br><small class="fw-bold">
+                                            <span th:text="${order.customer?.fullName ?: 'N/A'}"></span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Note Display -->
+                            <div th:if="${order.note != null and not #strings.isEmpty(order.note)}">
+                                <div class="alert alert-info py-2">
+                                    <small><strong>📝 Ghi chú:</strong> <span th:text="${order.note}"></span></small>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Total Amount and Actions -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="total-amount">
+                                    <i class="bi bi-cash-stack"></i> Tổng: 
+                                    <span th:text="${#numbers.formatInteger(order.totalAmount ?: 0, 0, 'COMMA')}">0</span> VNĐ
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm btn-custom" 
+                                        th:onclick="|showOrderDetails(${order.id})|">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-receipt"></i> Hóa đơn
+                        </a>
+                        <a th:href="@{'/booking/details/' + ${selectedBooking.id}}" 
+                           class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-eye"></i> Chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service List -->
+        <div th:if="${selectedBooking != null and orders != null and !orders.empty}">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="alert alert-success d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <h5 class="mb-1">🎉 Dịch vụ đã đặt cho Booking #<span th:text="${selectedBooking.id}"></span></h5>
+                            <small>Phòng <strong th:text="${selectedBooking.room != null ? selectedBooking.room.name : 'N/A'}"></strong> | Tổng <strong th:text="${orders.size()}"></strong> dịch vụ</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-6 col-md-6 mb-4" th:each="order : ${orders}">
+                    <div class="card order-card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                            <h6 class="mb-0 fw-bold">
+                                <i class="bi bi-star-fill"></i> <span th:text="${order.serviceName}">Tên dịch vụ</span>
+                            </h6>
+                            <!-- Status badges (null-safe) -->
+                            <span th:if="${order.status != null and order.status.contains('Đang xử lý')}" class="badge fs-6 bg-warning text-dark" th:text="${order.status}"></span>
+                            <span th:if="${order.status != null and order.status.contains('Hoàn thành')}" class="badge fs-6 bg-success" th:text="${order.status}"></span>
+                            <span th:if="${order.status != null and (order.status.toLowerCase().contains('huy') or order.status.toLowerCase().contains('hủy'))}" class="badge fs-6 bg-danger" th:text="${order.status}"></span>
+                            <span th:if="${order.status == null or (order.status != null and !(order.status.contains('Đang xử lý') or order.status.contains('Hoàn thành') or order.status.toLowerCase().contains('huy') or order.status.toLowerCase().contains('hủy')))}" class="badge fs-6 bg-secondary" th:text="${order.status != null ? order.status : 'Chờ xử lý'}"></span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <i class="bi bi-currency-dollar text-primary" style="font-size: 2rem;"></i>
+                                        <p class="mb-1 small text-muted">Giá đơn vị</p>
+                                        <p class="fw-bold text-primary"><span th:text="${#numbers.formatDecimal(order.price, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <i class="bi bi-box text-success" style="font-size: 2rem;"></i>
+                                        <p class="mb-1 small text-muted">Số lượng</p>
+                                        <p class="fw-bold text-success"><span th:text="${order.quantity}"></span> đơn vị</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="bg-light p-3 rounded">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small class="text-muted">🕒 Thời gian đặt:</small>
+                                                <br><small class="fw-bold" th:text="${#temporals.format(order.orderTime, 'dd/MM/yyyy HH:mm')}"></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">👤 Khách hàng:</small>
+                                                <br><small class="fw-bold" th:text="${order.customerName}"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div th:if="${order.note != null and !#strings.isEmpty(order.note)}" class="alert alert-info py-2">
+                                <small><strong>📝 Ghi chú:</strong> <span th:text="${order.note}"></span></small>
+                            </div>
+                            
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="total-amount">
+                                    <i class="bi bi-cash-stack"></i> Tổng: <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
+                                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm btn-custom" 
+                    onclick="showOrderDetails(this)"
+                    th:data-order-id="${order.id}"
+                    th:data-service-name="${order.serviceName}"
+                    th:data-price="${order.price}"
+                    th:data-quantity="${order.quantity}"
+                    th:data-total="${order.totalAmount}"
+                    th:data-customer="${order.customerName}"
+                    th:data-phone="${order.phone}"
+                    th:data-time="${order.orderTime != null ? #temporals.format(order.orderTime, 'dd/MM/yyyy HH:mm:ss') : ''}"
+                    th:data-status="${order.status}"
+                    th:data-note="${order.note}"
+                    th:data-admin-note="${order.adminNote}"
+                    th:data-processed-by="${order.processedBy}"
+                    th:data-updated-at="${order.updatedAt != null ? #temporals.format(order.updatedAt, 'dd/MM/yyyy HH:mm:ss') : ''}">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <div th:if="${selectedBooking != null}" class="row mt-5">
+            <div class="col-12">
+                <div class="card payment-summary text-white">
+                    <div class="card-body">
+                        <h4 class="mb-4 text-center">
+                            <i class="bi bi-calculator"></i> 📊 TỔNG HỢP THANH TOÁN
+                        </h4>
+                        <div class="text-center mb-4">
+                            <h5>🏨 Booking #<span th:text="${selectedBooking.id}"></span> - Phòng <span th:text="${selectedBooking.room != null ? selectedBooking.room.name : 'N/A'}"></span></h5>
+                            <p class="mb-2">
+                                <small class="text-white-50">
+                                    📅 <span th:text="${selectedBooking.checkIn != null ? #temporals.format(selectedBooking.checkIn, 'dd/MM/yyyy') : 'N/A'}"></span> 
+                                    đến <span th:text="${selectedBooking.checkOut != null ? #temporals.format(selectedBooking.checkOut, 'dd/MM/yyyy') : 'N/A'}"></span>
+                                </small>
+                            </p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a th:href="@{'/booking/invoice/' + ${selectedBooking.id}}" 
+                                   class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-receipt"></i> Xem hóa đơn chi tiết
+                                </a>
+                                <a th:href="@{'/booking/details/' + ${selectedBooking.id}}" 
+                                   class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-info-circle"></i> Chi tiết booking
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-white text-dark h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-house-door text-primary" style="font-size: 3rem;"></i>
+                                        <h6 class="mt-2">💰 Tiền phòng</h6>
+                                        <h3 class="text-primary mb-0">
+                                            <span th:text="${roomTotal != null ? #numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT') : '0'}"></span> VNĐ
+                                        </h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-white text-dark h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-gear text-success" style="font-size: 3rem;"></i>
+                                        <h6 class="mt-2">🛎️ Tiền dịch vụ</h6>
+                                        <h3 class="text-success mb-0">
+                                            <span th:text="${totalAmount != null ? #numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT') : '0'}"></span> VNĐ
+                                        </h3>
+                                        <small class="text-muted">(<span th:text="${orders != null ? orders.size() : 0}"></span> dịch vụ)</small>
+                                        <div th:if="${canPayServices}" class="mt-2">
+                                            <small class="text-success d-block">Chưa xuất hóa đơn cho <strong th:text="${unpaidConfirmedCount}"></strong> dịch vụ đã xác nhận.</small>
+                                            <small class="text-success">Tổng cần thanh toán: <strong th:text="${#numbers.formatDecimal(unpaidServiceTotal, 0, 'COMMA', 0, 'POINT')}"></strong> VNĐ</small>
+                                        </div>
+                                        <div th:if="${hasPendingServices}" class="mt-2">
+                                            <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Có dịch vụ đang chờ/đang xử lý. Vui lòng đợi xác nhận để thanh toán.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center border-top border-light pt-4">
+                            <h2 class="mb-4">
+                                🏆 <strong>TỔNG CỘNG: 
+                                <span th:text="${grandTotal != null ? #numbers.formatDecimal(grandTotal, 0, 'COMMA', 0, 'POINT') : (totalAmount != null ? #numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT') : '0')}"></span> VNĐ</strong>
+                            </h2>
+                            
+                            <div class="mb-4">
+                                                                <span class="badge fs-5 p-3" 
+                                                                            th:classappend="${selectedBooking.status != null and selectedBooking.status == 'Đã xác nhận'} ? 'bg-warning text-dark' : (selectedBooking.status != null and selectedBooking.status.contains('thanh toán') ? 'bg-success' : 'bg-light text-dark')">
+                                                                        <i th:class="${selectedBooking.status != null and selectedBooking.status == 'Đã xác nhận'} ? 'bi bi-clock' : (selectedBooking.status != null and selectedBooking.status.contains('thanh toán') ? 'bi bi-check-circle' : 'bi bi-info-circle')"></i>
+                                                                        <span th:text="${selectedBooking.status}"></span>
+                                                                </span>
+                            </div>
+                            
+                            <div class="d-flex flex-wrap justify-content-center gap-3">
+                                <!-- Nút thanh toán -->
+                                          <a th:if="${selectedBooking.status != null and selectedBooking.status == 'Đã xác nhận' and !(selectedBooking.status != null and selectedBooking.status.contains('thanh toán'))}"
+                                              th:href="@{'/khachhang/payment/' + ${selectedBooking.id}}" 
+                                              class="btn btn-warning btn-lg btn-custom">
+                                    <i class="bi bi-credit-card"></i> 💳 Thanh toán ngay
+                                </a>
+                                
+                                <div th:if="${selectedBooking.status != null and selectedBooking.status.contains('thanh toán') and (unpaidConfirmedCount == null or unpaidConfirmedCount == 0)}" class="alert alert-success d-inline-block mb-0">
+                                    <i class="bi bi-check-circle"></i> ✅ Đã thanh toán toàn bộ!
+                                </div>
+
+                                <!-- Thanh toán dịch vụ sau khi đã thanh toán phòng -->
+                                <form th:if="${canPayServices}" th:action="@{'/khachhang/payment/' + ${selectedBooking.id} + '/services'}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-light btn-lg btn-custom">
+                                        <i class="bi bi-cash-coin"></i> 💳 Thanh toán dịch vụ ( <span th:text="${#numbers.formatDecimal(unpaidServiceTotal, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ )
+                                    </button>
+                                </form>
+                                
+                                <!-- Các nút khác -->
+                                <a th:href="@{'/khachhang/services/list?bookingId=' + ${selectedBooking.id}}" 
+                                   class="btn btn-primary btn-lg btn-custom">
+                                    <i class="bi bi-plus-circle"></i> ➕ Đặt thêm dịch vụ
+                                </a>
+                                
+                                <a href="/booking/history" class="btn btn-outline-light btn-lg btn-custom">
+                                    <i class="bi bi-clock-history"></i> 📋 Lịch sử booking
+                                </a>
+                                
+                                <a th:href="@{'/booking/invoice/' + ${selectedBooking.id}}" 
+                                   class="btn btn-info btn-lg btn-custom">
+                                    <i class="bi bi-receipt"></i> 🧾 Xem hóa đơn
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State - Booking đã chọn nhưng chưa có dịch vụ -->
+        <div th:if="${selectedBooking != null and (orders == null or orders.empty)}" class="row">
+            <div class="col-12">
+                <div class="empty-state text-center">
+                    <i class="bi bi-cart-x text-muted" style="font-size: 5rem;"></i>
+                    <h3 class="mt-4 text-success">🎯 Booking đã được chọn!</h3>
+                    <p class="text-muted fs-5">
+                        Booking <strong class="text-primary">#<span th:text="${selectedBooking.id}"></span></strong> 
+                        (Phòng <strong class="text-primary" th:text="${selectedBooking.room != null ? selectedBooking.room.name : 'N/A'}"></strong>) 
+                        hiện tại chưa có dịch vụ nào được đặt
+                    </p>
+                    
+                    <div class="alert alert-info d-inline-block mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Trạng thái:</strong> 
+                <span class="badge ms-2" 
+                    th:classappend="${selectedBooking.status == 'Đã xác nhận'} ? 'bg-success' : (selectedBooking.status != null and selectedBooking.status.contains('thanh toán') ? 'bg-primary' : 'bg-warning')"
+                    th:text="${selectedBooking.status}"></span>
+                    </div>
+                    
+                    <div>
+                        <a th:href="@{'/khachhang/services/list?bookingId=' + ${selectedBooking.id}}" 
+                           class="btn btn-primary btn-lg btn-custom">
+                            <i class="bi bi-plus-circle"></i> 🛎️ Đặt dịch vụ ngay
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Default Empty State - Chưa chọn booking -->
+        <div th:if="${selectedBooking == null}" class="row">
+            <div class="col-12">
+                <div class="empty-state text-center">
+                    <i class="bi bi-calendar-check text-primary" style="font-size: 5rem;"></i>
+                    <h3 class="mt-4 text-primary">🏨 Chọn booking để bắt đầu</h3>
+                    <p class="text-muted fs-5">Sử dụng dropdown ở trên để chọn booking bạn muốn quản lý dịch vụ</p>
+                    
+                    <div th:if="${paidBookings != null and !paidBookings.empty}" class="alert alert-success d-inline-block">
+                        <i class="bi bi-check-circle"></i>
+                        🎉 Bạn có <strong th:text="${#lists.size(paidBookings)}"></strong> booking khả dụng để đặt dịch vụ
+                    </div>
+                    
+                    <div th:if="${paidBookings == null or paidBookings.empty}" class="alert alert-warning d-inline-block">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        ⚠️ Bạn chưa có booking nào được xác nhận hoặc đã thanh toán
+                        <br><small class="mt-2 d-block">Vui lòng đặt phòng trước khi sử dụng dịch vụ</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Single Reusable Modal for order details -->
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="orderModalLabel">
+                        <i class="bi bi-info-circle"></i> Chi tiết dịch vụ: <span id="modalOrderServiceName">-</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <table class="table table-bordered table-striped">
+                                <tr>
+                                    <th class="bg-light">🛎️ Tên dịch vụ</th>
+                                    <td id="modalOrderService">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">💰 Giá đơn vị</th>
+                                    <td id="modalOrderPrice">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">📦 Số lượng</th>
+                                    <td id="modalOrderQuantity">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">💵 Tổng tiền</th>
+                                    <td class="fw-bold text-success fs-5" id="modalOrderTotal">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">👤 Khách hàng</th>
+                                    <td id="modalOrderCustomer">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">📞 Số điện thoại</th>
+                                    <td id="modalOrderPhone">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">🕒 Thời gian đặt</th>
+                                    <td id="modalOrderTime">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">📊 Trạng thái</th>
+                                    <td>
+                                        <span class="badge fs-6 p-2" id="modalOrderStatus">-</span>
+                                    </td>
+                                </tr>
+                                <tr id="modalAdminNoteRow" style="display:none;">
+                                    <th class="bg-light">📝 Ghi chú (Admin)</th>
+                                    <td id="modalAdminNote">-</td>
+                                </tr>
+                                <tr id="modalProcessedByRow" style="display:none;">
+                                    <th class="bg-light">👷 Xử lý bởi</th>
+                                    <td id="modalProcessedBy">-</td>
+                                </tr>
+                                <tr id="modalUpdatedAtRow" style="display:none;">
+                                    <th class="bg-light">🕒 Cập nhật gần nhất</th>
+                                    <td id="modalUpdatedAt">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="modalOrderNoteSection" class="mt-4" style="display: none;">
+                        <h6 class="text-primary"><i class="bi bi-sticky"></i> Ghi chú từ khách hàng</h6>
+                        <div class="alert alert-info" id="modalOrderNote">-</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Đóng
+                    </button>
+                    <form id="modalCancelForm" method="post" class="d-inline" style="display: none;"
+                          onsubmit="return confirm('⚠️ Bạn có chắc muốn hủy dịch vụ này không?')">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Hủy dịch vụ
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Format number with Vietnamese locale
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' VNĐ';
+        }
+        
+        // Helper utilities
+        function setTextById(id, text) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = text != null && text !== '' ? text : '-';
+        }
+
+        function setHtmlById(id, html) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = html != null && html !== '' ? html : '-';
+        }
+
+        function toggleRow(rowId, elId, value) {
+            const row = document.getElementById(rowId);
+            const el = document.getElementById(elId);
+            if (!row || !el) return;
+            if (value && value.toString().trim() !== '') {
+                el.textContent = value;
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        function applyStatusBadgeClass(el, status) {
+            if (!el) return;
+            el.textContent = status != null && status !== '' ? status : '-';
+            el.className = 'badge fs-6 p-2';
+            if (status && status.includes('Đang xử lý')) {
+                el.classList.add('bg-warning', 'text-dark');
+            } else if (status && status.includes('Hoàn thành')) {
+                el.classList.add('bg-success');
+            } else if (status && (status.toLowerCase().includes('huy') || status.toLowerCase().includes('hủy')) ) {
+                el.classList.add('bg-danger');
+            } else {
+                el.classList.add('bg-secondary');
+            }
+        }
+
+        // Show order details in single modal (simplified)
+        function showOrderDetails(button) {
+            const orderId = button.dataset.orderId;
+            setTextById('modalOrderServiceName', button.dataset.serviceName);
+            setTextById('modalOrderService', button.dataset.serviceName);
+            setHtmlById('modalOrderPrice', `<span class="fw-bold text-primary">${formatCurrency(parseInt(button.dataset.price) || 0)}</span>`);
+            setHtmlById('modalOrderQuantity', `<span class="badge bg-success fs-6">${button.dataset.quantity || 0}</span> đơn vị`);
+            setTextById('modalOrderTotal', formatCurrency(parseInt(button.dataset.total) || 0));
+            setTextById('modalOrderCustomer', button.dataset.customer);
+            setTextById('modalOrderPhone', button.dataset.phone);
+            setTextById('modalOrderTime', button.dataset.time);
+
+            applyStatusBadgeClass(document.getElementById('modalOrderStatus'), button.dataset.status);
+
+            // Note & admin fields
+            toggleRow('modalOrderNoteSection', 'modalOrderNote', button.dataset.note);
+            toggleRow('modalAdminNoteRow', 'modalAdminNote', button.dataset.adminNote);
+            toggleRow('modalProcessedByRow', 'modalProcessedBy', button.dataset.processedBy);
+            toggleRow('modalUpdatedAtRow', 'modalUpdatedAt', button.dataset.updatedAt);
+
+            // Cancel form visibility
+            const cancelForm = document.getElementById('modalCancelForm');
+            if (cancelForm) {
+                if (button.dataset.status && button.dataset.status.includes('Đang xử lý')) {
+                    cancelForm.action = `/khachhang/services/cancel/${orderId}`;
+                    cancelForm.style.display = 'inline';
+                } else {
+                    cancelForm.style.display = 'none';
+                }
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('orderModal'));
+            modal.show();
+        }
+        
+        // Optimized auto refresh - only if there are pending orders
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusBadges = document.querySelectorAll('.order-card .badge');
+            let hasPendingOrders = false;
+            
+            statusBadges.forEach(badge => {
+                if (badge.textContent.includes('Đang xử lý')) {
+                    hasPendingOrders = true;
+                }
+            });
+
+            // Only auto-refresh if there are pending orders, and reduce frequency to reduce lag
+            if (hasPendingOrders) {
+                // use setInterval but guard with visibility to avoid reload loops when not visible
+                const intervalMs = 60000; // 60s
+                const id = setInterval(() => {
+                    if (!document.hidden) {
+                        // show a quick overlay before reload to avoid white flash
+                        const overlay = document.getElementById('loadingOverlay');
+                        if (overlay) overlay.style.display = 'flex';
+                        window.location.reload();
+                    }
+                }, intervalMs);
+                // Clear if user navigates away
+                window.addEventListener('beforeunload', () => clearInterval(id));
+            }
+
+            // Lazy loading for better performance via IntersectionObserver
+            const observerOptions = { root: null, rootMargin: '50px', threshold: 0.1 };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('loaded');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            document.querySelectorAll('.order-card').forEach(card => observer.observe(card));
+        });
+
+        // Lightweight loading overlay and select debounce logic
+        (function(){
+            // create overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'loadingOverlay';
+            overlay.style.display = 'none';
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = 'rgba(255,255,255,0.6)';
+            overlay.style.zIndex = '1050';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.innerHTML = '<div class="spinner"><i class="bi bi-arrow-repeat bi-spin fs-3 text-primary"></i> &nbsp;Đang tải...</div>';
+            document.body.appendChild(overlay);
+
+            function debounce(fn, wait){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments), wait); } }
+
+            const select = document.getElementById('bookingSelect');
+            const form = select ? select.form : null;
+            const submitBtn = document.getElementById('bookingSubmitBtn');
+
+            if(select){
+                const wait = parseInt(select.dataset.debounce || '300', 10);
+                const handler = debounce(async function(){
+                    const bookingId = select.value;
+                    if (!bookingId) {
+                        // If unselected, keep current content and hide overlay
+                        if (submitBtn) submitBtn.disabled = false;
+                        if (overlay) overlay.style.display = 'none';
+                        return;
+                    }
+                    try {
+                        if (submitBtn) submitBtn.disabled = true;
+                        overlay.style.display = 'flex';
+                        
+                        // Add timeout to AJAX request
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                        
+                        const resp = await fetch('/khachhang/services/my-orders/json?bookingId=' + encodeURIComponent(bookingId), {
+                            credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        
+                        console.log('orders json fetch status=', resp.status);
+                        if (!resp.ok) { 
+                            console.warn('JSON fetch failed, falling back to full page load', resp.status);
+                            if (form) form.submit(); 
+                            return; 
+                        }
+                        const data = await resp.json();
+                        console.log('orders data received:', data);
+                        renderOrdersJson(data);
+                    } catch (err) {
+                        console.error('Failed to load orders JSON:', err);
+                        console.log('Error details:', err.name, err.message);
+                        
+                        // Show user-friendly error in container instead of alert
+                        const container = document.getElementById('ordersContainer');
+                        if (container) {
+                            container.innerHTML = `
+                                <div class="alert alert-warning text-center">
+                                    <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                                    <h4 class="mt-3">⚠️ Không thể tải dữ liệu</h4>
+                                    <p>Có lỗi khi tải thông tin booking. Vui lòng thử lại.</p>
+                                    <button class="btn btn-primary" onclick="window.location.reload()">
+                                        <i class="bi bi-arrow-clockwise"></i> Tải lại trang
+                                    </button>
+                                </div>
+                            `;
+                        }
+                        
+                        // fallback to full-page submit after showing error
+                        setTimeout(() => {
+                            if (form) form.submit();
+                        }, 2000);
+                    } finally {
+                        if (submitBtn) submitBtn.disabled = false;
+                        overlay.style.display = 'none';
+                    }
+                }, wait);
+                select.addEventListener('change', handler);
+            }
+            if(form){ form.addEventListener('submit', function(e){ e.preventDefault(); /* prevent full page reload */ }); }
+        })();
+
+        function renderOrdersJson(data){
+            const container = document.getElementById('ordersContainer');
+            if (!container) {
+                console.error('ordersContainer not found');
+                return;
+            }
+            
+            console.log('renderOrdersJson called with:', data);
+            
+            if (data.error) {
+                container.innerHTML = `
+                    <div class="alert alert-danger text-center">
+                        <i class="bi bi-x-circle fs-1 text-danger"></i>
+                        <h4 class="mt-3">❌ Lỗi server</h4>
+                        <p>Server error: ${data.error}</p>
+                        <button class="btn btn-primary" onclick="window.location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Tải lại trang
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const b = data.selectedBooking;
+            let html = '';
+            
+            if (!b) {
+                html += `
+                    <div class="empty-state text-center p-5">
+                        <i class="bi bi-calendar-check" style="font-size: 4rem; color: #6c757d;"></i>
+                        <h3 class="mt-3 text-muted">🏨 Chọn booking để bắt đầu</h3>
+                        <p class="text-muted">Sử dụng dropdown ở trên để chọn booking bạn muốn quản lý dịch vụ</p>
+                        <div class="alert alert-info mt-3" role="alert">
+                            <strong>💡 Hướng dẫn:</strong> Chọn một booking từ danh sách trên để xem các dịch vụ đã đặt
+                        </div>
+                    </div>
+                `;
+                container.innerHTML = html;
+                return;
+            }
+            
+            // Display booking info
+            html += `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">🏨 <strong>Booking được chọn:</strong> #${b.id} - Phòng <strong>${b.roomName || 'N/A'}</strong></h6>
+                                <small class="text-muted">📅 ${b.checkIn || 'N/A'} đến ${b.checkOut || 'N/A'} | Trạng thái: <span class="badge bg-primary">${b.status || 'N/A'}</span></small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="/booking/invoice/${b.id}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-receipt"></i> Hóa đơn
+                                </a>
+                                <a href="/booking/details/${b.id}" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Orders list
+            const orders = data.orders || [];
+            if (orders.length === 0) {
+                html += `
+                    <div class="empty-state text-center p-5">
+                        <i class="bi bi-box" style="font-size: 4rem; color: #6c757d;"></i>
+                        <h3 class="mt-3 text-muted">📭 Chưa có dịch vụ</h3>
+                        <p class="text-muted">Bạn chưa đặt dịch vụ cho booking này.</p>
+                        <a href="/khachhang/services/list?bookingId=${b.id}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Đặt dịch vụ ngay
+                        </a>
+                    </div>
+                `;
+                container.innerHTML = html;
+                return;
+            }
+            
+            html += `
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="alert alert-success d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <h5 class="mb-1">🎉 Dịch vụ đã đặt cho Booking #${b.id}</h5>
+                                <small>Phòng <strong>${b.roomName || 'N/A'}</strong> | Tổng <strong>${orders.length}</strong> dịch vụ</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+            `;
+            
+            orders.forEach(o => {
+                const statusClass = o.status && o.status.includes('Hoàn thành') ? 'bg-success' : 
+                                   o.status && o.status.includes('Đang xử lý') ? 'bg-warning text-dark' : 'bg-secondary';
+                
+                html += `
+                    <div class="col-lg-6 col-md-6 mb-4">
+                        <div class="card order-card h-100 loaded">
+                            <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                                <h6 class="mb-0 fw-bold"><i class="bi bi-star-fill"></i> ${o.serviceName || 'N/A'}</h6>
+                                <span class="badge ${statusClass}">${o.status || 'Chờ xử lý'}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-6 text-center">
+                                        <i class="bi bi-currency-dollar text-primary" style="font-size: 2rem;"></i>
+                                        <p class="mb-1 small text-muted">Giá đơn vị</p>
+                                        <p class="fw-bold text-primary">${new Intl.NumberFormat('vi-VN').format(o.price || 0)} VNĐ</p>
+                                    </div>
+                                    <div class="col-6 text-center">
+                                        <i class="bi bi-box text-success" style="font-size: 2rem;"></i>
+                                        <p class="mb-1 small text-muted">Số lượng</p>
+                                        <p class="fw-bold text-success">${o.quantity || 0} đơn vị</p>
+                                    </div>
+                                </div>
+                                <div class="bg-light p-3 rounded mb-3">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">🕒 Thời gian đặt:</small>
+                                            <br><small class="fw-bold">${o.orderTime || 'N/A'}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">👤 Khách hàng:</small>
+                                            <br><small class="fw-bold">${o.customerName || 'N/A'}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                ${o.note ? `<div class="alert alert-info py-2"><small><strong>📝 Ghi chú:</strong> ${o.note}</small></div>` : ''}
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="total-amount">
+                                        <i class="bi bi-cash-stack"></i> Tổng: <span>${new Intl.NumberFormat('vi-VN').format(o.totalAmount || 0)}</span> VNĐ
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-custom" onclick="showOrderDetailsFromJson(${o.id})">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+            
+            console.log('Orders rendered successfully');
+        }
+
+        function showOrderDetailsFromJson(id){
+            // fallback: navigate to server-side detail page
+            window.location.href = '/khachhang/services/' + id;
+        }
+    </script>
+</body>
+</html>

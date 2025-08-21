@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{admin/layout :: head}">
+    <title>Danh sách phòng</title>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <nav th:replace="~{admin/layout :: navbar}"></nav>
+        <aside th:replace="~{admin/layout :: sidebar}"></aside>
+        
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <!-- Content Header -->
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>
+                                <i class="fas fa-bed mr-2"></i>
+                                Quản lý phòng
+                            </h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="/admin/home">Trang chủ</a></li>
+                                <li class="breadcrumb-item active">Phòng</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-list mr-1"></i>
+                                Danh sách phòng
+                            </h3>
+                            <div class="card-tools">
+                                <a href="/admin/rooms/add" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus mr-1"></i>
+                                    Thêm mới
+                                </a>
+                                <!-- Data-fix utilities -->
+                                <form action="/admin/datafix/normalize-room-status" method="post" style="display:inline-block;margin-left:6px;">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm" onclick="return confirm('Chuẩn hóa trạng thái BOOKED -> OCCUPIED cho toàn bộ phòng?');">
+                                        <i class="fas fa-sync-alt mr-1"></i> Chuẩn hóa trạng thái
+                                    </button>
+                                </form>
+                                <form action="/admin/datafix/sync-room-availability" method="post" style="display:inline-block;margin-left:6px;">
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Đồng bộ cờ available theo status cho toàn bộ phòng?');">
+                                        <i class="fas fa-toggle-on mr-1"></i> Đồng bộ available
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+    <!-- DEBUG: Hiển thị chi tiết từng phòng -->
+    <ul style="background:#f8f9fa;color:#c7254e;padding:8px;">
+      <li th:each="room : ${rooms}">
+        [[${room.id}]] - [[${room.name}]] - [[${room.roomType != null ? room.roomType.tenLoai : 'N/A'}]] - [[${room.status}]] - [[${room.capacity}]] - [[${room.description}]]
+      </li>
+    </ul>
+                            <!-- Search Box đơn giản -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="text" id="searchInput" class="form-control" 
+                                               placeholder="Tìm kiếm phòng...">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <span class="badge badge-info">
+                                        Tổng: <span th:text="${#lists.size(rooms)}">0</span> phòng
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover" id="roomTable">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th style="width: 60px;">ID</th>
+                                            <th>Số phòng</th>
+                                            <th>Loại phòng</th>
+                                            <th>Giá (VNĐ)</th>
+                                            <th style="width: 120px;">Trạng thái</th>
+                                            <th>Sức chứa</th>
+                                            <th>Mô tả</th>
+                                            <th style="width: 120px;">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="room : ${rooms}">
+                                            <td th:text="${room.id}"></td>
+                                            <td th:text="${room.name}"></td>
+                                            <td th:text="${room.roomType != null ? room.roomType.tenLoai : 'N/A'}"></td>
+                                            <td th:text="${room.roomType != null ? #numbers.formatDecimal(room.roomType.priceBase, 0, 'COMMA', 0, 'POINT') : 'N/A'}"></td>
+                                            <td>
+                                                <form th:action="@{'/admin/rooms/update-status/' + ${room.id}}" method="post" class="d-inline">
+                                                    <select name="status" class="form-control form-control-sm" 
+                                                            onchange="this.form.submit()"
+                                                            th:attr="data-original=${room.status}">
+                                                        <option value="AVAILABLE" th:selected="${room.status == 'AVAILABLE'}">
+                                                            Có sẵn
+                                                        </option>
+                                                        <option value="OCCUPIED" th:selected="${room.status == 'OCCUPIED' || room.status == 'Đã đặt'}">
+                                                            Đã đặt
+                                                        </option>
+                                                        <option value="MAINTENANCE" th:selected="${room.status == 'MAINTENANCE'}">
+                                                            Bảo trì
+                                                        </option>
+                                                        <option value="CLEANING" th:selected="${room.status == 'CLEANING'}">
+                                                            Đang dọn dẹp
+                                                        </option>
+                                                        <!-- Loại bỏ PAID để tránh nhầm lẫn; thanh toán thuộc về Booking, không phải Room -->
+                                                    </select>
+                                                </form>
+                                                <!-- Hiển thị badge cho trạng thái hiện tại -->
+                                                <div class="mt-1">
+                                                    <span th:if="${room.status == 'AVAILABLE'}" class="badge badge-success">
+                                                        <i class="fas fa-check-circle"></i> Có sẵn
+                                                    </span>
+                                                    <span th:if="${room.status == 'OCCUPIED' || room.status == 'BOOKED' || room.status == 'Đã đặt'}" class="badge badge-danger">
+                                                        <i class="fas fa-user"></i> Đã đặt
+                                                    </span>
+                                                    <span th:if="${room.status == 'MAINTENANCE'}" class="badge badge-warning">
+                                                        <i class="fas fa-tools"></i> Bảo trì
+                                                    </span>
+                                                    <span th:if="${room.status == 'CLEANING'}" class="badge badge-info">
+                                                        <i class="fas fa-broom"></i> Đang dọn
+                                                    </span>
+                                                    <span th:if="${room.status == 'Đã thanh toán'}" class="badge badge-success">
+                                                        <i class="fas fa-money-bill-wave"></i> Đã thanh toán
+                                                    </span>
+                                                    <span th:if="${room.status == null}" class="badge badge-secondary">
+                                                        <i class="fas fa-question"></i> N/A
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td th:text="${room.capacity != null ? room.capacity : 'N/A'}"></td>
+                                            <td>
+                                                <span th:text="${room.description != null ? (room.description.length() > 50 ? room.description.substring(0, 50) + '...' : room.description) : 'Chưa có mô tả'}"
+                                                      th:title="${room.description}"></span>
+                                            </td>
+                                            <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a th:href="@{'/admin/rooms/edit/' + ${room.id}}" class="btn btn-warning" title="Chỉnh sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#roomDetailModal"
+                                                    th:attr="data-id=${room.id},
+                                                            data-name=${room.name != null && !#strings.isEmpty(room.name) ? room.name : 'N/A'},
+                                                            data-roomtype=${room.roomType != null && room.roomType.tenLoai != null && !#strings.isEmpty(room.roomType.tenLoai) ? room.roomType.tenLoai : 'N/A'},
+                                                            data-price=${room.roomType != null && room.roomType.priceBase != null ? #numbers.formatDecimal(room.roomType.priceBase, 0, 'COMMA', 0, 'POINT') : 'N/A'},
+                                                            data-status=${room.status != null && !#strings.isEmpty(room.status) ? room.status : 'N/A'},
+                                                            data-capacity=${room.capacity != null ? room.capacity : 'N/A'},
+                                                            data-description=${room.description != null && !#strings.isEmpty(room.description) ? room.description : 'Chưa có mô tả'},
+                                                            data-image=${room.image != null && !#strings.isEmpty(room.image) ? room.image : ''}"
+                                                    title="Xem chi tiết">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-danger" title="Xóa"
+                                                        data-toggle="modal" data-target="#deleteRoomModal"
+                                                        th:attr="data-id=${room.id},data-name=${room.name}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(rooms)}">
+                                            <td colspan="8" class="text-center text-muted">
+                                                <i class="fas fa-info-circle mr-2"></i>
+                                                Chưa có phòng nào
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer th:replace="~{admin/layout :: footer}"></footer>
+    </div>
+    <!-- Đảm bảo không có button chi tiết phòng thừa ngoài bảng! -->
+
+<!-- Đảm bảo script thư viện nằm trước script custom -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// DEBUG: Đếm số button chi tiết phòng khi trang load
+$(document).ready(function() {
+    console.log('Document ready - Starting room modal setup...');
+    
+    // Hàm tìm kiếm trong bảng
+    function searchTable() {
+        var input = document.getElementById("searchInput");
+        var filter = input.value.toUpperCase();
+        var table = document.getElementById("roomTable");
+        var tr = table.getElementsByTagName("tr");
+        
+        for (var i = 1; i < tr.length; i++) {
+            var found = false;
+            var td = tr[i].getElementsByTagName("td");
+            for (var j = 0; j < td.length; j++) {
+                if (td[j]) {
+                    var txtValue = td[j].textContent || td[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            tr[i].style.display = found ? "" : "none";
+        }
+    }
+    
+    // Gắn sự kiện search vào input
+    $('#searchInput').on('keyup', searchTable);
+    
+    var detailBtnCount = $('button[data-target="#roomDetailModal"]').length;
+    console.log('Số button chi tiết phòng:', detailBtnCount);
+    
+    if (detailBtnCount === 0) {
+        console.error('KHÔNG TÌM THẤY NÚT CHI TIẾT PHÒNG!');
+    }
+
+    // Modal chi tiết phòng - SỬA TRIỆT ĐỂ
+    $('#roomDetailModal').on('show.bs.modal', function (event) {
+        console.log('Modal đang mở...');
+        var button = $(event.relatedTarget);
+        
+        if (!button || button.length === 0) {
+            console.error('Không tìm thấy button kích hoạt modal!');
+            return;
+        }
+        
+        // DEBUG: Log toàn bộ data-* của button
+        console.log('BUTTON ELEMENT:', button[0]);
+        console.log('DATA ATTRIBUTES (ROOM):', button.data());
+        
+        // Lấy data từ attributes thay vì jQuery .data()
+        var roomId = button.attr('data-id');
+        var roomName = button.attr('data-name');
+        var roomType = button.attr('data-roomtype');
+        var roomPrice = button.attr('data-price');
+        var roomStatus = button.attr('data-status');
+        var roomCapacity = button.attr('data-capacity');
+        var roomDescription = button.attr('data-description');
+        var roomImage = button.attr('data-image');
+        
+        console.log('Raw data:', {
+            id: roomId,
+            name: roomName,
+            type: roomType,
+            price: roomPrice,
+            status: roomStatus,
+            capacity: roomCapacity,
+            description: roomDescription,
+            image: roomImage
+        });
+        
+        // Điền dữ liệu vào modal với kiểm tra null
+        $('#modalRoomId').text(roomId || 'N/A');
+        $('#modalRoomName').text(roomName || 'N/A');
+        $('#modalRoomType').text(roomType || 'N/A');
+        $('#modalRoomPrice').text(roomPrice ? roomPrice + ' VNĐ' : 'N/A');
+        $('#modalRoomStatus').text(roomStatus || 'N/A');
+        $('#modalRoomCapacity').text(roomCapacity || 'N/A');
+        $('#modalRoomDescription').text(roomDescription || 'Chưa có mô tả');
+        
+        // Xử lý hình ảnh
+        if(roomImage && roomImage.trim() !== '') {
+            $('#modalRoomImage').attr('src', roomImage).show();
+        } else {
+            $('#modalRoomImage').hide();
+        }
+        
+        console.log('Đã điền xong dữ liệu vào modal');
+    });
+    
+    // Modal xác nhận xóa phòng
+    var deleteRoomUrl = '';
+    $('#deleteRoomModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var id = button.attr('data-id');
+        var name = button.attr('data-name');
+        $('#deleteRoomName').text(name || 'N/A');
+        deleteRoomUrl = '/admin/rooms/delete/' + id;
+    });
+    
+    $('#confirmDeleteRoomBtn').click(function() {
+        if (deleteRoomUrl) {
+            window.location.href = deleteRoomUrl;
+        }
+    });
+    
+    console.log('Setup hoàn tất!');
+});
+</script>
+
+<!-- Modal xác nhận xóa phòng -->
+<div class="modal fade" id="deleteRoomModal" tabindex="-1" role="dialog" aria-labelledby="deleteRoomModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteRoomModalLabel">Xác nhận xóa</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn xóa phòng <strong id="deleteRoomName"></strong> không?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteRoomBtn">Xóa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xem chi tiết phòng -->
+<div class="modal fade" id="roomDetailModal" tabindex="-1" role="dialog" aria-labelledby="roomDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="roomDetailModalLabel">Chi tiết phòng</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group mb-2">
+          <li class="list-group-item"><strong>ID:</strong> <span id="modalRoomId"></span></li>
+          <li class="list-group-item"><strong>Số phòng:</strong> <span id="modalRoomName"></span></li>
+          <li class="list-group-item"><strong>Loại phòng:</strong> <span id="modalRoomType"></span></li>
+          <li class="list-group-item"><strong>Giá:</strong> <span id="modalRoomPrice"></span></li>
+          <li class="list-group-item"><strong>Trạng thái:</strong> <span id="modalRoomStatus"></span></li>
+          <li class="list-group-item"><strong>Sức chứa:</strong> <span id="modalRoomCapacity"></span></li>
+          <li class="list-group-item"><strong>Mô tả:</strong> <span id="modalRoomDescription"></span></li>
+        </ul>
+        <img id="modalRoomImage" src="#" alt="Hình ảnh phòng" class="img-fluid rounded" style="display:none;max-height:200px;"/>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<div th:replace="~{admin/layout :: scripts}"></div>
+<script>
+$(document).ready(function() {
+    // Xử lý thay đổi trạng thái phòng
+    $('select[name="status"]').on('change', function() {
+        const select = $(this);
+        const form = select.closest('form');
+        const originalStatus = select.data('original');
+        const newStatus = select.val();
+        
+        // Mapping trạng thái để hiển thị
+        const statusTexts = {
+            'AVAILABLE': 'Có sẵn',
+            'OCCUPIED': 'Đã đặt', 
+            'MAINTENANCE': 'Bảo trì',
+            'CLEANING': 'Đang dọn dẹp'
+        };
+        
+        if (originalStatus !== newStatus) {
+            const confirmMessage = `Bạn có chắc muốn thay đổi trạng thái phòng từ "${statusTexts[originalStatus] || 'N/A'}" sang "${statusTexts[newStatus] || 'N/A'}"?`;
+            
+            if (confirm(confirmMessage)) {
+                // Submit form
+                form.submit();
+            } else {
+                // Reset về trạng thái cũ
+                select.val(originalStatus);
+            }
+        }
+    });
+    
+    // Xử lý modal chi tiết phòng
+    $('#roomDetailModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const modal = $(this);
+        
+        modal.find('#modalRoomId').text(button.data('id'));
+        modal.find('#modalRoomName').text(button.data('name'));
+        modal.find('#modalRoomType').text(button.data('roomtype'));
+        modal.find('#modalRoomPrice').text(button.data('price') + ' VNĐ');
+        modal.find('#modalRoomStatus').text(button.data('status'));
+        modal.find('#modalRoomCapacity').text(button.data('capacity'));
+        modal.find('#modalRoomDescription').text(button.data('description'));
+        
+        const image = button.data('image');
+        if (image && image.trim() !== '') {
+            modal.find('#modalRoomImage').attr('src', image).show();
+        } else {
+            modal.find('#modalRoomImage').hide();
+        }
+    });
+    
+    // Xử lý modal xóa phòng
+    $('#deleteRoomModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const roomId = button.data('id');
+        const roomName = button.data('name');
+        const modal = $(this);
+        
+        modal.find('#deleteRoomName').text(roomName);
+        modal.find('#confirmDeleteRoomBtn').off('click').on('click', function() {
+            window.location.href = '/admin/rooms/delete/' + roomId;
+        });
+    });
+    
+    // Tìm kiếm phòng
+    $('#searchInput').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('#roomTable tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+});
+</script>
+<pre th:text="${rooms}"></pre>
+</body>
+</html>
+

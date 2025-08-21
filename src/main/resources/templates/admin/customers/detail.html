@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+    <!-- Navbar -->
+    <nav th:replace="~{admin/layout :: navbar}"></nav>
+
+    <!-- Main Sidebar Container -->
+    <aside th:replace="~{admin/layout :: sidebar}"></aside>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <!-- Content Header -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Chi tiết khách hàng</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/admin">Trang chủ</a></li>
+                            <li class="breadcrumb-item"><a href="/admin/customers">Khách hàng</a></li>
+                            <li class="breadcrumb-item active">Chi tiết</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title">Thông tin khách hàng</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">ID:</label>
+                                    <div class="col-sm-9">
+                                        <p class="form-control-plaintext" th:text="${customer.id}"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">Họ tên:</label>
+                                    <div class="col-sm-9">
+                                        <p class="form-control-plaintext" th:text="${customer.fullName}"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">Email:</label>
+                                    <div class="col-sm-9">
+                                        <p class="form-control-plaintext" th:text="${customer.email}"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">Số điện thoại:</label>
+                                    <div class="col-sm-9">
+                                        <p class="form-control-plaintext" th:text="${customer.phone}"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">Ngày tạo:</label>
+                                    <div class="col-sm-9">
+                                        <p class="form-control-plaintext" th:text="${customer.createdAt}"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/admin/customers" class="btn btn-default">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                                <form th:action="@{/admin/customers/delete/{id}(id=${customer.id})}" 
+                                      method="post" style="display: inline;"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa khách hàng này?')">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash"></i> Xóa khách hàng
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">Lịch sử đặt phòng</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Chức năng hiển thị lịch sử đặt phòng sẽ được cập nhật sau.</p>
+                            </div>
+                        </div>
+
+                        <div class="card card-warning">
+                            <div class="card-header">
+                                <h3 class="card-title">Lịch sử sử dụng dịch vụ</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Chức năng hiển thị lịch sử dịch vụ sẽ được cập nhật sau.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{admin/layout :: footer}"></footer>
+</div>
+
+<!-- Scripts -->
+<div th:replace="~{admin/layout :: scripts}"></div>
+</body>
+</html>

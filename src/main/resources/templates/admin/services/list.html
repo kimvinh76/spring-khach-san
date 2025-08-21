@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Dịch vụ - Hotel Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .services-container { margin-top: 20px; }
+        .service-card { 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .service-card-header {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+        }
+        .service-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .service-item:last-child { border-bottom: none; }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-processing { background-color: #d1ecf1; color: #0c5460; }
+        .status-completed { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+        .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+        .filter-section { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            text-align: center; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 { margin: 0; font-size: 2rem; }
+        .stat-card p { margin: 5px 0 0 0; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-gear-fill text-primary"></i>
+                        Quản lý Dịch vụ
+                    </h1>
+                    <div>
+                        <a href="/admin/dashboard" class="btn btn-outline-secondary">
+                            <i class="bi bi-house"></i> Dashboard
+                        </a>
+                        <a href="/admin/bookings" class="btn btn-outline-primary">
+                            <i class="bi bi-calendar-check"></i> Quản lý Booking
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thống kê -->
+        <div class="stats-grid" th:if="${not #lists.isEmpty(services)}">
+            <div class="stat-card">
+                <h3 class="text-warning" th:text="${pendingCount}">0</h3>
+                <p>Chờ xác nhận</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-info" th:text="${processingCount}">0</h3>
+                <p>Đang xử lý</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-success" th:text="${completedCount}">0</h3>
+                <p>Hoàn thành</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-danger" th:text="${rejectedCount}">0</h3>
+                <p>Từ chối</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-primary" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')}">0</h3>
+                <p>Tổng doanh thu (VNĐ)</p>
+            </div>
+        </div>
+
+        <!-- Bộ lọc -->
+        <div class="filter-section">
+            <form method="get" th:action="@{/admin/services}">
+                <div class="row align-items-end">
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">Lọc theo trạng thái:</label>
+                        <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">Tất cả dịch vụ</option>
+                            <option value="Chờ xác nhận" th:selected="${selectedStatus == 'Chờ xác nhận'}">Chờ xác nhận</option>
+                            <option value="Đang xử lý" th:selected="${selectedStatus == 'Đang xử lý'}">Đang xử lý</option>
+                            <option value="Hoàn thành" th:selected="${selectedStatus == 'Hoàn thành'}">Hoàn thành</option>
+                            <option value="Từ chối" th:selected="${selectedStatus == 'Từ chối'}">Từ chối</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel"></i> Lọc
+                            </button>
+                            <a href="/admin/services" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Làm mới
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i>
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${info}" class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle"></i>
+            <span th:text="${info}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Danh sách dịch vụ -->
+        <div class="services-container">
+            <!-- Hiển thị theo nhóm booking -->
+            <div th:if="${not #maps.isEmpty(servicesByBooking)}">
+                <div th:each="bookingEntry : ${servicesByBooking}" class="service-card">
+                    <div class="service-card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-calendar-check"></i>
+                                Booking #<span th:text="${bookingEntry.key}"></span>
+                                (<span th:text="${#lists.size(bookingEntry.value)}"></span> dịch vụ)
+                            </span>
+                            <div class="d-flex gap-2">
+                                <!-- Chỉ hiển thị nút hoàn thành nếu booking có dịch vụ chưa hoàn thành -->
+                                <form th:if="${bookingEntry.value.?[status == 'Chờ xác nhận'].size() > 0}"
+                                      th:action="@{'/admin/services/confirm-booking/' + ${bookingEntry.key}}" 
+                                      method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-success btn-sm"
+                                            onclick="return confirm('Hoàn thành tất cả dịch vụ chờ xác nhận cho booking này?')">
+                                        <i class="bi bi-check-all"></i> Hoàn thành chờ xác nhận
+                                    </button>
+                                </form>
+                                <form th:if="${bookingEntry.value.?[status == 'Đang xử lý'].size() > 0}"
+                                      th:action="@{'/admin/services/complete-booking/' + ${bookingEntry.key}}" 
+                                      method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-primary btn-sm"
+                                            onclick="return confirm('Hoàn thành tất cả dịch vụ đang xử lý cho booking này?')">
+                                        <i class="bi bi-check-square-fill"></i> Hoàn thành đang xử lý
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Danh sách dịch vụ trong booking -->
+                    <div th:each="service : ${bookingEntry.value}" class="service-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <strong th:text="${service.serviceType}">Loại dịch vụ</strong>
+                                <br>
+                                <small class="text-muted" th:text="${service.description}">Mô tả</small>
+                            </div>
+                            <div class="col-md-2">
+                                <strong th:text="${service.customerName}">Tên khách</strong>
+                                <br>
+                                <small class="text-muted" th:text="${service.phone}">SĐT</small>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="status-badge" 
+                                      th:class="${'status-badge ' + 
+                                                 (service.status == 'Chờ xác nhận' ? 'status-pending' : 
+                                                  service.status == 'Đang xử lý' ? 'status-processing' : 
+                                                  service.status == 'Hoàn thành' ? 'status-completed' : 'status-rejected')}"
+                                      th:text="${service.status}">
+                                    Trạng thái
+                                </span>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <strong th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex gap-1 justify-content-end flex-wrap">
+                                    <!-- Chỉ hiển thị nút nếu dịch vụ chưa hoàn thành hoặc chưa bị từ chối -->
+                                    <form th:if="${service.status == 'Chờ xác nhận'}"
+                                          th:action="@{'/admin/services/' + ${service.id} + '/confirm'}" 
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    </form>
+                                    <form th:if="${service.status == 'Đang xử lý'}"
+                                          th:action="@{'/admin/services/' + ${service.id} + '/complete'}" 
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-primary btn-sm"
+                                                onclick="return confirm('Hoàn thành dịch vụ này?')">
+                                            <i class="bi bi-check-square"></i>
+                                        </button>
+                                    </form>
+                                    <button th:if="${service.status == 'Chờ xác nhận'}"
+                                            type="button" class="btn btn-warning btn-sm"
+                                            data-bs-toggle="modal" 
+                                            th:data-bs-target="'#rejectModal' + ${service.id}">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                    
+                                    <!-- Xóa -->
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal" 
+                                            th:data-bs-target="'#deleteModal' + ${service.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dịch vụ không có booking -->
+            <div th:if="${not #lists.isEmpty(services)}">
+                <div th:each="service : ${services}" th:if="${service.bookingId == null}" class="service-card">
+                    <div class="service-card-header">
+                        <i class="bi bi-gear"></i>
+                        Dịch vụ đơn lẻ #<span th:text="${service.id}"></span>
+                    </div>
+                    <div class="service-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <strong th:text="${service.serviceType}">Loại dịch vụ</strong>
+                                <br>
+                                <small class="text-muted" th:text="${service.description}">Mô tả</small>
+                            </div>
+                            <div class="col-md-2">
+                                <strong th:text="${service.customerName}">Tên khách</strong>
+                                <br>
+                                <small class="text-muted" th:text="${service.phone}">SĐT</small>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="status-badge" 
+                                      th:class="${'status-badge ' + 
+                                                 (service.status == 'Chờ xác nhận' ? 'status-pending' : 
+                                                  service.status == 'Đang xử lý' ? 'status-processing' : 
+                                                  service.status == 'Hoàn thành' ? 'status-completed' : 'status-rejected')}"
+                                      th:text="${service.status}">
+                                    Trạng thái
+                                </span>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <strong th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex gap-1 justify-content-end flex-wrap">
+                                    <!-- Các nút tương tự như trên -->
+                                    <form th:if="${service.status == 'Chờ xác nhận'}"
+                                          th:action="@{'/admin/services/' + ${service.id} + '/confirm'}" 
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    </form>
+                                    
+                                    <form th:if="${service.status == 'Đang xử lý'}"
+                                          th:action="@{'/admin/services/' + ${service.id} + '/complete'}" 
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-primary btn-sm"
+                                                onclick="return confirm('Hoàn thành dịch vụ này?')">
+                                            <i class="bi bi-check-square"></i>
+                                        </button>
+                                    </form>
+                                    
+                                    <button th:if="${service.status == 'Chờ xác nhận'}"
+                                            type="button" class="btn btn-warning btn-sm"
+                                            data-bs-toggle="modal" 
+                                            th:data-bs-target="'#rejectModal' + ${service.id}">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                    
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            data-bs-toggle="modal" 
+                                            th:data-bs-target="'#deleteModal' + ${service.id}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${#lists.isEmpty(services)}" class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Không có dịch vụ nào</h4>
+                <p class="text-muted">Chưa có dịch vụ nào được đặt hoặc phù hợp với bộ lọc.</p>
+                <a href="/admin/services" class="btn btn-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Xem tất cả
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modals -->
+    <div th:each="service : ${services}"
+         class="modal fade" th:id="'rejectModal' + ${service.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{'/admin/services/' + ${service.id} + '/reject'}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-x-circle text-warning"></i>
+                            Từ chối dịch vụ #<span th:text="${service.id}"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <p><strong>Khách hàng:</strong> <span th:text="${service.customerName}"></span></p>
+                            <p><strong>Loại dịch vụ:</strong> <span th:text="${service.serviceType}"></span></p>
+                            <p><strong>Mô tả:</strong> <span th:text="${service.description}"></span></p>
+                            <p><strong>Số tiền:</strong> <span th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ</p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Lý do từ chối (tùy chọn):</label>
+                            <textarea name="reason" class="form-control" rows="3" 
+                                      placeholder="Nhập lý do từ chối dịch vụ này..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-x-lg"></i> Từ chối dịch vụ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modals -->
+    <div th:each="service : ${services}"
+         class="modal fade" th:id="'deleteModal' + ${service.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{'/admin/services/' + ${service.id} + '/delete'}" method="post">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-trash"></i>
+                            XÓA VĨNH VIỄN dịch vụ #<span th:text="${service.id}"></span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>CẢNH BÁO:</strong> Hành động này sẽ XÓA VĨNH VIỄN dịch vụ và KHÔNG THỂ HOÀN TÁC!
+                        </div>
+                        <div class="mb-3">
+                            <p><strong>Khách hàng:</strong> <span th:text="${service.customerName}"></span></p>
+                            <p><strong>Loại dịch vụ:</strong> <span th:text="${service.serviceType}"></span></p>
+                            <p><strong>Mô tả:</strong> <span th:text="${service.description}"></span></p>
+                            <p><strong>Số tiền:</strong> <span th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ</p>
+                            <p><strong>Trạng thái:</strong> <span th:text="${service.status}"></span></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> XÓA VĨNH VIỄN
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử đặt phòng - Hotel Booking</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-center mb-3">
+                <i class="bi bi-clock-history text-primary"></i>
+                Lịch sử đặt phòng
+            </h2>
+            <p class="text-center text-muted">Tra cứu và quản lý các booking của bạn</p>
+        </div>
+    </div>
+
+    <!-- Không cho phép tìm kiếm, chỉ hiển thị lịch sử booking của bạn -->
+
+    <!-- Results -->
+    <div th:if="${bookings != null and !bookings.empty}">
+        <!-- Status Guide -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-info" role="alert">
+                    <h6><i class="bi bi-info-circle"></i> Trạng thái booking:</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <span class="badge bg-warning text-dark">Chờ xác nhận</span> - Chờ admin duyệt
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-success">Đã xác nhận</span> - Có thể thanh toán
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-primary">Đã thanh toán</span> - Đã hoàn tất
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-danger">Đã hủy</span> - Booking bị hủy
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-3">
+                    <i class="bi bi-list-ul text-success"></i> 
+                    Kết quả tìm kiếm
+                    <small class="text-muted">(<span th:text="${#lists.size(bookings)}"></span> booking)</small>
+                </h4>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 col-md-6 mb-3" th:each="booking : ${bookings}">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-bookmark"></i> 
+                            Booking #<span th:text="${booking.id}"></span>
+                        </h6>
+            <!-- Status badges (null-safe, Thymeleaf-friendly) -->
+        <span th:if="${booking.status != null and booking.status == 'Đã xác nhận'}"
+            class="badge bg-success" th:text="${booking.status}"></span>
+        <span th:if="${booking.status != null and booking.status.contains('thanh toán')}"
+            class="badge bg-primary" th:text="${booking.status}"></span>
+        <!-- Waiting / not yet confirmed (null or explicitly waiting) -->
+        <span th:if="${booking.status == null or booking.status == 'Chờ xác nhận' or booking.status.trim() == ''}"
+            class="badge bg-warning text-dark" th:text="${booking.status != null and booking.status.trim() != '' ? booking.status : 'Chờ xác nhận'}"></span>
+        <!-- Cancelled -->
+        <span th:if="${booking.status != null and (booking.status.toLowerCase().contains('huy') or booking.status.toLowerCase().contains('hủy'))}"
+            class="badge bg-danger" th:text="${booking.status}"></span>
+        <!-- Fallback for any other status -->
+        <span th:if="${booking.status != null and !(booking.status == 'Đã xác nhận' or booking.status.contains('thanh toán') or booking.status == 'Chờ xác nhận' or booking.status.toLowerCase().contains('huy') or booking.status.toLowerCase().contains('hủy'))}"
+            class="badge bg-secondary" th:text="${booking.status}"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <p class="mb-1"><strong>Khách hàng:</strong> <span th:text="${booking.customerName}"></span></p>
+                                <p class="mb-1"><strong>Điện thoại:</strong> <span th:text="${booking.phone}"></span></p>
+                                <p class="mb-1"><strong>Phòng:</strong> 
+                                    <span class="badge bg-info" th:text="${booking.room != null ? booking.room.name : 'N/A'}"></span>
+                                </p>
+                                <p class="mb-1"><strong>Loại phòng:</strong> 
+                                    <span th:text="${booking.room != null and booking.room.roomType != null ? booking.room.roomType.tenLoai : 'N/A'}"></span>
+                                </p>
+                                <p class="mb-1"><strong>Ngày đặt:</strong> 
+                                    <span th:text="${booking.bookingDate != null ? #temporals.format(booking.bookingDate, 'dd/MM/yyyy HH:mm') : 'N/A'}"></span>
+                                </p>
+                                <p class="mb-1"><strong>Nhận phòng:</strong> 
+                                    <span th:text="${booking.checkIn != null ? #temporals.format(booking.checkIn, 'dd/MM/yyyy') : 'N/A'}"></span>
+                                </p>
+                                <p class="mb-1"><strong>Trả phòng:</strong> 
+                                    <span th:text="${booking.checkOut != null ? #temporals.format(booking.checkOut, 'dd/MM/yyyy') : 'N/A'}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <!-- Hiển thị giá phòng nếu có -->
+                            <span class="text-primary fw-bold" th:if="${booking.room != null and booking.room.roomType != null}">
+                                <span th:text="${#numbers.formatDecimal(booking.room.roomType.priceBase, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ/đêm
+                            </span>
+                            
+                            <div>
+                                <!-- Nút xem trạng thái -->
+                                <a th:href="@{'/booking/status/' + ${booking.id}}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-info-circle"></i> Trạng thái
+                                </a>
+                                
+                                <!-- Nút xem hóa đơn -->
+                                <a th:href="@{'/booking/invoice/' + ${booking.id}}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-receipt"></i> Hóa đơn thanh toán
+                                </a>
+                                
+                                <!-- Nút thanh toán nếu đã xác nhận -->
+                                <a th:if="${booking.status == 'Đã xác nhận'}" 
+                                   th:href="@{'/booking/payment/' + ${booking.id}}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-credit-card"></i> Thanh toán
+                                </a>
+                                
+                                <!-- Nút xem dịch vụ nếu đã xác nhận hoặc thanh toán -->
+                                          <a th:if="${booking.status == 'Đã xác nhận' or (booking.status != null and booking.status.contains('thanh toán'))}" 
+                                              th:href="@{'/khachhang/services/my-orders?bookingId=' + ${booking.id}}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-gear"></i> Đơn hàng của tôi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${bookings == null or bookings.empty}" class="row">
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-search" style="font-size: 4rem; color: #6c757d;"></i>
+            <h4 class="mt-3 text-muted">Chưa tìm thấy booking nào</h4>
+            <p class="text-muted" th:if="${searchPhone != null or searchCustomerName != null}">
+                Không tìm thấy booking với thông tin tìm kiếm đã nhập.
+            </p>
+            <p class="text-muted" th:if="${searchPhone == null and searchCustomerName == null}">
+                Hãy nhập số điện thoại hoặc tên khách hàng để tìm kiếm booking của bạn.
+            </p>
+            <div class="alert alert-info mt-3" role="alert">
+                <h6><i class="bi bi-info-circle"></i> Hướng dẫn sử dụng:</h6>
+                <ul class="text-start mb-0">
+                    <li><strong>Chờ xác nhận:</strong> Booking mới tạo, chờ admin xác nhận</li>
+                    <li><strong>Đã xác nhận:</strong> Admin đã duyệt, có thể thanh toán và đặt dịch vụ</li>
+                    <li><strong>Đã thanh toán:</strong> Đã hoàn tất thanh toán, có thể đặt thêm dịch vụ</li>
+                    <li><strong>Đã hủy:</strong> Booking bị hủy bởi admin hoặc khách hàng</li>
+                </ul>
+            </div>
+            <a href="/rooms" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Đặt phòng mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">🎯 Hành động nhanh</h5>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a href="/rooms" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Đặt phòng mới
+                        </a>
+                        <a href="/khachhang/services/list" class="btn btn-success">
+                            <i class="bi bi-gear"></i> Xem danh sách dịch vụ
+                        </a>
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-house"></i> Trang chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

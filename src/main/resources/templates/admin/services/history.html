@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head}"></head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+    <!-- Navbar -->
+    <nav th:replace="~{admin/layout :: navbar}"></nav>
+
+    <!-- Main Sidebar Container -->
+    <aside th:replace="~{admin/layout :: sidebar}"></aside>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <!-- Content Header -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Lịch sử dịch vụ</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="/admin">Trang chủ</a></li>
+                            <li class="breadcrumb-item"><a href="/admin/services">Dịch vụ</a></li>
+                            <li class="breadcrumb-item active">Lịch sử</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Thống kê tổng quan -->
+                <div class="row">
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 th:text="${totalCount}">0</h3>
+                                <p>Tổng đơn hàng</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3 th:text="${completedCount}">0</h3>
+                                <p>Đã hoàn thành</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-warning">
+                            <div class="inner">
+                                <h3 th:text="${processingCount}">0</h3>
+                                <p>Đang xử lý</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-danger">
+                            <div class="inner">
+                                <h3 th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')}">0</h3>
+                                <p>Tổng doanh thu (VNĐ)</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tìm kiếm -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Tìm kiếm dịch vụ</h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <form method="get" th:action="@{/admin/services/history}">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="customerName">Tên khách hàng:</label>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="customerName" 
+                                                       name="customerName"
+                                                       th:value="${customerName}"
+                                                       placeholder="Nhập tên khách hàng">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="phone">Số điện thoại:</label>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="phone" 
+                                                       name="phone"
+                                                       th:value="${phone}"
+                                                       placeholder="Nhập số điện thoại">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>&nbsp;</label>
+                                                <div class="d-block">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-search"></i> Tìm kiếm
+                                                    </button>
+                                                    <a href="/admin/services/history" class="btn btn-secondary">
+                                                        <i class="fas fa-refresh"></i> Tất cả
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danh sách dịch vụ -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Danh sách dịch vụ</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped" id="servicesHistoryTable">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Khách hàng</th>
+                                                <th>Điện thoại</th>
+                                                <th>Dịch vụ</th>
+                                                <th>Tổng tiền</th>
+                                                <th>Trạng thái</th>
+                                                <th>Ngày tạo</th>
+                                                <th>Ghi chú</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="service : ${services}">
+                                                <td th:text="${service.id}"></td>
+                                                <td th:text="${service.customerName}"></td>
+                                                <td th:text="${service.phone}"></td>
+                                                <td>
+                                                    <ul class="list-unstyled mb-0">
+                                                        <li th:each="item : ${service.serviceItems}">
+                                                            <span th:text="${item.serviceName}"></span>
+                                                            <span class="badge badge-info" th:text="'x' + ${item.quantity}"></span>
+                                                            <br>
+                                                            <small class="text-muted" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></small>
+                                                        </li>
+                                                    </ul>
+                                                </td>
+                                                <td>
+                                                    <strong th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge" 
+                                                          th:classappend="${service.status == 'Hoàn thành' ? 'badge-success' : 
+                                                                          service.status == 'Đang xử lý' ? 'badge-warning' : 'badge-secondary'}"
+                                                          th:text="${service.status}"></span>
+                                                </td>
+                                                <td th:text="${#temporals.format(service.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                                <td th:text="${service.notes}"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{admin/layout :: footer}"></footer>
+</div>
+
+<!-- Scripts -->
+<div th:replace="~{admin/layout :: scripts}"></div>
+<script>
+$(function () {
+    $('#servicesHistoryTable').DataTable({
+        "responsive": true,
+        "lengthChange": false,
+        "autoWidth": false,
+        "order": [[ 0, "desc" ]],
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json"
+        }
+    });
+});
+</script>
+</body>
+</html>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Hoàn thành</h5>
+                            <h3 th:text="${completedCount}">0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Đang xử lý</h5>
+                            <h3 th:text="${processingCount}">0</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Tổng doanh thu</h5>
+                            <h3 th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form tìm kiếm -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-search me-2"></i>Tìm kiếm dịch vụ</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="/admin/services/history" class="row g-3">
+                <div class="col-md-4">
+                    <label for="customerName" class="form-label">Tên khách hàng:</label>
+                    <input type="text" name="customerName" id="customerName" class="form-control" 
+                           placeholder="Nhập tên khách hàng" th:value="${customerName}">
+                </div>
+                <div class="col-md-4">
+                    <label for="phone" class="form-label">Số điện thoại:</label>
+                    <input type="text" name="phone" id="phone" class="form-control" 
+                           placeholder="Nhập số điện thoại" th:value="${phone}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Tìm kiếm
+                    </button>
+                    <a href="/admin/services/history" class="btn btn-outline-secondary">
+                        <i class="fas fa-refresh me-1"></i>Tất cả
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bảng dịch vụ -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-table me-2"></i>Danh sách dịch vụ</h5>
+        </div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(services)}" class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Không có dữ liệu</h5>
+                <p class="text-muted">Không tìm thấy dịch vụ nào phù hợp với tiêu chí tìm kiếm.</p>
+            </div>
+
+            <div th:if="${!#lists.isEmpty(services)}" class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Khách hàng</th>
+                            <th>Dịch vụ</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian đặt</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="service : ${services}">
+                            <td th:text="${service.id}"></td>
+                            <td>
+                                <strong th:text="${service.customerName}"></strong>
+                            </td>
+                            <td>
+                                <i class="fas fa-spa text-primary me-2"></i>
+                                <span th:text="${service.serviceName}"></span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary" th:text="${service.quantity}"></span>
+                            </td>
+                            <td class="text-end">
+                                <span th:text="${#numbers.formatDecimal(service.price, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
+                            </td>
+                            <td class="text-end fw-bold">
+                                <span class="text-success" th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
+                            </td>
+                            <td>
+                                <span th:if="${service.status == 'Hoàn thành'}" class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Hoàn thành
+                                </span>
+                                <span th:if="${service.status == 'Đang xử lý'}" class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Đang xử lý
+                                </span>
+                                <span th:if="${service.status != 'Hoàn thành' and service.status != 'Đang xử lý'}" 
+                                      class="badge bg-secondary" th:text="${service.status}"></span>
+                            </td>
+                            <td>
+                                <small th:text="${#temporals.format(service.orderTime, 'dd/MM/yyyy HH:mm')}"></small>
+                            </td>
+                            <td>
+                                <small th:text="${service.note ?: '-'}" class="text-muted"></small>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

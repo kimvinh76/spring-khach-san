@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="admin/layout :: head"></head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+  <!-- Navbar -->
+  <nav th:replace="admin/layout :: navbar"></nav>
+
+  <!-- Main Sidebar Container -->
+  <aside th:replace="admin/layout :: sidebar"></aside>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0" th:text="${room.id != null ? 'Chỉnh sửa phòng' : 'Thêm phòng mới'}"></h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="/admin">Trang chủ</a></li>
+              <li class="breadcrumb-item"><a href="/admin/rooms">Danh sách phòng</a></li>
+              <li class="breadcrumb-item active" th:text="${room.id != null ? 'Chỉnh sửa' : 'Thêm mới'}"></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-8">
+            <div class="card card-primary">
+              <div class="card-header">
+                <h3 class="card-title" th:text="${room.id != null ? 'Chỉnh sửa thông tin phòng' : 'Thêm phòng mới'}"></h3>
+              </div>
+              <!-- form start -->
+              <form th:object="${room}" 
+                    th:action="${room.id != null ? '/admin/rooms/update/' + room.id : '/admin/rooms'}" 
+                    method="post">
+                <div class="card-body">
+                  <div class="row">
+                    <!-- Tên phòng -->
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="name">Tên phòng <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="name" 
+                               th:field="*{name}"
+                               placeholder="Nhập tên phòng (VD: P101, Phòng 201...)"
+                               required>
+                        <div th:if="${#fields.hasErrors('name')}" class="text-danger">
+                          <small th:errors="*{name}"></small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Loại phòng -->
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="roomType">Loại phòng <span class="text-danger">*</span></label>
+                        <select class="form-control" 
+                                id="roomType" 
+                                th:field="*{roomType.id}"
+                                required>
+                          <option value="">-- Chọn loại phòng --</option>
+                          <option th:each="type : ${roomTypes}" 
+                                  th:value="${type.id}" 
+                                  th:text="${type.tenLoai}">
+                          </option>
+                        </select>
+                        <div th:if="${#fields.hasErrors('roomType')}" class="text-danger">
+                          <small th:errors="*{roomType}"></small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <!-- Sức chứa -->
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="capacity">Sức chứa (người)</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="capacity" 
+                               th:field="*{capacity}"
+                               placeholder="Số người tối đa"
+                               min="1"
+                               max="20">
+                        <div th:if="${#fields.hasErrors('capacity')}" class="text-danger">
+                          <small th:errors="*{capacity}"></small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="status">Trạng thái</label>
+                        <select class="form-control" id="status" th:field="*{status}">
+                          <option value="AVAILABLE">Còn trống</option>
+                          <option value="OCCUPIED">Đã thuê</option>
+                          <option value="MAINTENANCE">Bảo trì</option>
+                          <option value="CLEANING">Đang dọn dẹp</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <!-- Có sẵn -->
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="available">Tình trạng hoạt động</label>
+                        <select class="form-control" id="available" th:field="*{available}">
+                          <option value="true">Hoạt động</option>
+                          <option value="false">Ngừng hoạt động</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Hình ảnh -->
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="image">Hình ảnh</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="image" 
+                               th:field="*{image}"
+                               placeholder="Đường dẫn hoặc tên file hình ảnh">
+                        <small class="form-text text-muted">
+                          VD: room-101.jpg hoặc /images/rooms/deluxe.png
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Mô tả -->
+                  <div class="form-group">
+                    <label for="description">Mô tả chi tiết</label>
+                    <textarea class="form-control" 
+                              id="description" 
+                              th:field="*{description}"
+                              rows="4" 
+                              placeholder="Nhập mô tả chi tiết về phòng: view, nội thất, tiện nghi đặc biệt..."></textarea>
+                  </div>
+
+                </div>
+                <!-- /.card-body -->
+
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    <span th:text="${room.id != null ? 'Cập nhật' : 'Thêm mới'}"></span>
+                  </button>
+                  <a href="/admin/rooms" class="btn btn-secondary ml-2">
+                    <i class="fas fa-times"></i> Hủy bỏ
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card card-info">
+              <div class="card-header">
+                <h3 class="card-title">Hướng dẫn</h3>
+              </div>
+              <div class="card-body">
+                <ul class="list-unstyled">
+                  <li><i class="fas fa-info-circle text-info"></i> Tên phòng là bắt buộc</li>
+                  <li><i class="fas fa-info-circle text-info"></i> Phải chọn loại phòng</li>
+                  <li><i class="fas fa-info-circle text-info"></i> Sức chứa: số người tối đa trong phòng</li>
+                  <li><i class="fas fa-info-circle text-info"></i> Trạng thái: tình trạng sử dụng hiện tại</li>
+                  <li><i class="fas fa-info-circle text-info"></i> Hoạt động: phòng có thể sử dụng hay không</li>
+                  <li><i class="fas fa-info-circle text-info"></i> Hình ảnh và mô tả là tùy chọn</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Main Footer -->
+  <footer th:replace="admin/layout :: footer"></footer>
+</div>
+
+<!-- Scripts -->
+<div th:replace="admin/layout :: scripts"></div>
+
+</body>
+</html>

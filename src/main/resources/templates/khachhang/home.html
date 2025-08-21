@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khách sạn Demo - Trang chủ</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.9), rgba(108, 117, 125, 0.9)), 
+                        url('https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        .room-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .room-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        .room-type-card {
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .room-type-card:hover {
+            border-color: #0d6efd;
+            transform: scale(1.05);
+        }
+        .price-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-weight: bold;
+        }
+        .search-form {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/rooms/home">
+                <i class="bi bi-building"></i> Khách sạn Demo
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/rooms/home">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/rooms">Phòng & Giá</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/services">Dịch vụ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/room-types">Giới thiệu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact">Liên hệ</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/booking">Đặt phòng</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cart">
+                            <i class="bi bi-cart"></i> Giỏ hàng
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/khachhang/services/my-orders">Lịch sử đặt phòng</a>
+                    </li>
+                    <!-- Authentication Links -->
+                    <li class="nav-item" th:if="${session.currentUser == null}">
+                        <a class="nav-link" href="/auth/login">
+                            <i class="bi bi-box-arrow-in-right"></i> Đăng nhập
+                        </a>
+                    </li>
+                    <li class="nav-item" th:if="${session.currentUser == null}">
+                        <a class="nav-link" href="/auth/register">
+                            <i class="bi bi-person-plus"></i> Đăng ký
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown" th:if="${session.currentUser != null}">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> <span th:text="${session.currentUser.username}">User</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile">Hồ sơ cá nhân</a></li>
+                            <li><a class="dropdown-item" href="/bookings/my">Đặt phòng của tôi</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/auth/logout">Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">
+                        Chào mừng đến với Khách sạn Demo
+                    </h1>
+                    <p class="lead mb-4">
+                        Trải nghiệm dịch vụ lưu trú đẳng cấp, tiện nghi và hiện đại. 
+                        Tận hưởng kỳ nghỉ hoàn hảo với không gian sang trọng và dịch vụ chu đáo.
+                    </p>
+                    <div class="d-flex gap-3 mb-4">
+                        <div class="text-center">
+                            <h3 class="mb-0" th:text="${totalRooms}">0</h3>
+                            <small>Tổng phòng</small>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="mb-0" th:text="${availableRooms}">0</h3>
+                            <small>Phòng trống</small>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="mb-0" th:text="${roomTypes.size()}">0</h3>
+                            <small>Loại phòng</small>
+                        </div>
+                    </div>
+                    <a href="/rooms" class="btn btn-light btn-lg me-3">
+                        <i class="bi bi-search"></i> Khám phá phòng
+                    </a>
+                    <a href="/services" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-star"></i> Dịch vụ cao cấp
+                    </a>
+                </div>
+                <div class="col-lg-6">
+                    <!-- Quick Search Form -->
+                    <div class="search-form">
+                        <h4 class="text-dark mb-4">Tìm phòng nhanh</h4>
+                        <form action="/rooms" method="get">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark">Loại phòng</label>
+                                    <select name="roomTypeId" class="form-select">
+                                        <option value="">Tất cả loại phòng</option>
+                                        <option th:each="type : ${roomTypes}" 
+                                                th:value="${type.id}" 
+                                                th:text="${type.tenLoai}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark">Trạng thái</label>
+                                    <select name="available" class="form-select">
+                                        <option value="">Tất cả</option>
+                                        <option value="true">Còn trống</option>
+                                        <option value="false">Đã đặt</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark">Giá từ (VNĐ)</label>
+                                    <input type="number" name="minPrice" class="form-control" placeholder="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-dark">Giá đến (VNĐ)</label>
+                                    <input type="number" name="maxPrice" class="form-control" placeholder="10,000,000">
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                                        <i class="bi bi-search"></i> Tìm phòng ngay
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Room Types Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="mb-4">Các loại phòng nổi bật</h2>
+                    <p class="text-muted">Chọn loại phòng phù hợp với nhu cầu và ngân sách của bạn</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4" th:each="roomType : ${roomTypes}">
+                    <div class="card room-type-card h-100 text-center">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="bi bi-house-door display-4 text-primary"></i>
+                            </div>
+                            <h5 class="card-title" th:text="${roomType.tenLoai}"></h5>
+                            <p class="card-text text-muted" th:text="${roomType.description}"></p>
+                            <div class="price-badge mb-3">
+                                <span th:text="${#numbers.formatDecimal(roomType.priceBase, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ/đêm
+                            </div>
+                            <p class="small text-muted" th:text="${roomType.amenities}"></p>
+                        </div>
+                        <div class="card-footer bg-white border-0">
+                            <a th:href="@{/rooms(roomTypeId=${roomType.id})}" class="btn btn-outline-primary">
+                                <i class="bi bi-eye"></i> Xem phòng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Rooms Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="mb-4">Phòng cao cấp nổi bật</h2>
+                    <p class="text-muted">Những phòng đẳng cấp với tiện nghi hiện đại và view đẹp nhất</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4" th:each="room : ${featuredRooms}">
+                    <div class="card room-card h-100">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0" th:text="${room.name}"></h6>
+                            <span class="badge bg-success" th:if="${room.available}">Còn trống</span>
+                            <span class="badge bg-danger" th:if="${!room.available}">Đã đặt</span>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title text-primary" th:text="${room.roomType.tenLoai}"></h6>
+                            <p class="card-text text-muted" th:text="${room.roomType.description}"></p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-danger mb-0">
+                                    <span th:text="${#numbers.formatDecimal(room.roomType.priceBase, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ
+                                    <small class="text-muted">/đêm</small>
+                                </span>
+                                <span class="badge bg-success" th:if="${room.available}">
+                                    <i class="bi bi-check-circle"></i> Sẵn sàng đặt
+                                </span>
+                                <span class="badge bg-danger" th:if="${!room.available}">
+                                    <i class="bi bi-x-circle"></i> Đã có khách
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                Tiện nghi: <span th:text="${room.roomType.amenities}"></span>
+                            </small>
+                        </div>
+                        <div class="card-footer bg-white border-0 d-flex gap-2">
+                            <a th:href="@{'/rooms/detail/' + ${room.id}}" class="btn btn-outline-primary btn-sm flex-fill">
+                                <i class="bi bi-eye"></i> Chi tiết
+                            </a>
+                            <a th:href="@{'/booking/new?roomId=' + ${room.id}}" 
+                               th:if="${room.available}"
+                               class="btn btn-success btn-sm flex-fill">
+                                <i class="bi bi-calendar-check"></i> Đặt ngay
+                            </a>
+                            <button th:if="${!room.available}"
+                                    class="btn btn-secondary btn-sm flex-fill" disabled
+                                    th:title="'Phòng đã được đặt'">
+                                <i class="bi bi-x-circle"></i> Đã đặt
+                            </button>
+                            <form th:action="@{'/rooms/add-to-cart/' + ${room.id}}" method="post" class="flex-fill">
+                                <button type="submit" class="btn btn-warning btn-sm w-100">
+                                    <i class="bi bi-cart-plus"></i> Lưu
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/rooms" class="btn btn-primary btn-lg">
+                    <i class="bi bi-grid"></i> Xem tất cả phòng
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="mb-4">Dịch vụ cao cấp</h2>
+                    <p class="text-muted">Trải nghiệm những dịch vụ đẳng cấp 5 sao</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-flower1 display-4 text-primary"></i>
+                        </div>
+                        <h5>Spa & Massage</h5>
+                        <p class="text-muted">Thư giãn với dịch vụ spa và massage chuyên nghiệp</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-airplane display-4 text-success"></i>
+                        </div>
+                        <h5>Đưa đón sân bay</h5>
+                        <p class="text-muted">Dịch vụ đưa đón sân bay 24/7 với xe sang trọng</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-cup-hot display-4 text-danger"></i>
+                        </div>
+                        <h5>Ăn uống cao cấp</h5>
+                        <p class="text-muted">Dịch vụ ăn uống tại phòng và nhà hàng cao cấp</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/services" class="btn btn-primary btn-lg">
+                    <i class="bi bi-star"></i> Xem tất cả dịch vụ
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5>Khách sạn Demo</h5>
+                    <p class="text-muted">Trải nghiệm dịch vụ lưu trú đẳng cấp, tiện nghi và hiện đại.</p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="text-white"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Liên kết nhanh</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/rooms" class="text-muted text-decoration-none">Phòng & Giá</a></li>
+                        <li><a href="/services" class="text-muted text-decoration-none">Dịch vụ</a></li>
+                        <li><a href="/room-types" class="text-muted text-decoration-none">Giới thiệu</a></li>
+                        <li><a href="/contact" class="text-muted text-decoration-none">Liên hệ</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Liên hệ</h5>
+                    <ul class="list-unstyled text-muted">
+                        <li><i class="bi bi-geo-alt"></i> 123 Đường ABC, Quận 1, TP.HCM</li>
+                        <li><i class="bi bi-telephone"></i> (028) 1234 5678</li>
+                        <li><i class="bi bi-envelope"></i> info@hotelDemo.com</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2025 Khách sạn Demo. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

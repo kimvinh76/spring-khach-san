@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trạng thái đặt phòng - Hotel Booking</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-center mb-3">
+                <i class="bi bi-info-circle text-primary"></i>
+                Trạng thái đặt phòng #<span th:text="${booking.id}"></span>
+            </h2>
+            <p class="text-center text-muted">Theo dõi tiến độ booking và dịch vụ của bạn</p>
+        </div>
+    </div>
+
+    <!-- Thông báo lỗi -->
+    <div th:if="${error}" class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+    </div>
+
+    <!-- Thông tin booking -->
+    <div th:if="${booking}" class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bookmark"></i> Thông tin đặt phòng
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><strong>Thông tin khách hàng:</strong></h6>
+                            <p><strong>Tên:</strong> <span th:text="${booking.customerName}"></span></p>
+                            <p><strong>Điện thoại:</strong> <span th:text="${booking.phone}"></span></p>
+                            <p><strong>Email:</strong> <span th:text="${booking.email ?: 'N/A'}"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><strong>Thông tin phòng:</strong></h6>
+                            <p><strong>Phòng:</strong> <span th:text="${booking.room.name}"></span></p>
+                            <p><strong>Loại phòng:</strong> <span th:text="${booking.room.roomType.tenLoai}"></span></p>
+                            <p><strong>Giá:</strong> <span th:text="${#numbers.formatDecimal(booking.room.roomType.priceBase, 0, 'COMMA', 0, 'POINT')} + ' VNĐ/đêm'"></span></p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><strong>Thời gian:</strong></h6>
+                            <p><strong>Ngày đặt:</strong> <span th:text="${#temporals.format(booking.bookingDate, 'dd/MM/yyyy HH:mm')}"></span></p>
+                            <p><strong>Nhận phòng:</strong> <span th:text="${#temporals.format(booking.checkIn, 'dd/MM/yyyy')}"></span></p>
+                            <p><strong>Trả phòng:</strong> <span th:text="${#temporals.format(booking.checkOut, 'dd/MM/yyyy')}"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><strong>Trạng thái:</strong></h6>
+                            <p>
+                                <span class="badge fs-6" 
+                                      th:classappend="${booking.status == 'Đã xác nhận' ? 'bg-success' : 
+                                                      (booking.status != null and booking.status.contains('thanh toán') ? 'bg-primary' : 
+                                                      booking.status == 'Chờ xác nhận' ? 'bg-warning text-dark' : 'bg-danger')}"
+                                      th:text="${booking.status}"></span>
+                            </p>
+                            <div th:switch="${booking.status}">
+                                <div th:case="'Chờ xác nhận'" class="alert alert-warning">
+                                    <i class="bi bi-clock"></i> Booking đang chờ admin xác nhận. Vui lòng đợi...
+                                </div>
+                                <div th:case="'Đã xác nhận'" class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i> Booking đã được xác nhận! Bạn có thể thanh toán và đặt dịch vụ.
+                                </div>
+                                <div th:case="*" class="alert alert-info" th:if="${booking.status != null and booking.status.contains('thanh toán')}">
+                                    <i class="bi bi-credit-card"></i> Booking đã thanh toán thành công!
+                                </div>
+                                <div th:case="'Đã hủy'" class="alert alert-danger">
+                                    <i class="bi bi-x-circle"></i> Booking đã bị hủy.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dịch vụ liên quan -->
+            <div th:if="${relatedServices != null and !relatedServices.empty}" class="card shadow mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear"></i> Dịch vụ đã đặt
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Dịch vụ</th>
+                                    <th>Số lượng</th>
+                                    <th>Giá</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày đặt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="service : ${relatedServices}">
+                                    <td th:text="${service.serviceName}"></td>
+                                    <td th:text="${service.quantity}"></td>
+                                    <td th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${service.status == 'Hoàn thành' ? 'bg-success' : 
+                                                              service.status == 'Đang xử lý' ? 'bg-warning' : 
+                                                              service.status == 'Chờ xác nhận' ? 'bg-info' : 'bg-danger'}"
+                                              th:text="${service.status}"></span>
+                                    </td>
+                                    <td th:text="${#temporals.format(service.orderTime, 'dd/MM/yyyy HH:mm')}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hành động -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tools"></i> Hành động
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <!-- Nút xem hóa đơn -->
+                        <a th:href="@{'/booking/invoice/' + ${booking.id}}" class="btn btn-outline-info">
+                            <i class="bi bi-receipt"></i> Xem hóa đơn
+                        </a>
+                        
+                        <!-- Nút thanh toán nếu đã xác nhận -->
+                        <a th:if="${booking.status == 'Đã xác nhận'}" 
+                           th:href="@{'/booking/payment/' + ${booking.id}}" class="btn btn-warning">
+                            <i class="bi bi-credit-card"></i> Thanh toán
+                        </a>
+                        
+                        <!-- Nút đặt dịch vụ nếu đã xác nhận hoặc thanh toán -->
+                                <a th:if="${booking.status == 'Đã xác nhận' or (booking.status != null and booking.status.contains('thanh toán'))}" 
+                                    th:href="@{'/khachhang/services/my-orders?bookingId=' + ${booking.id}}" class="btn btn-success">
+                            <i class="bi bi-gear"></i> Đặt dịch vụ
+                        </a>
+                        
+                        <!-- Nút quay lại lịch sử -->
+                        <a href="/booking/history" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Quay lại lịch sử
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

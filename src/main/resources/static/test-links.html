@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin Menu Links</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-link { display: block; margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+        .test-link:hover { background: #e0e0e0; }
+        .status { padding: 5px; border-radius: 3px; margin-left: 10px; }
+        .status.ok { background: #90ee90; color: green; }
+        .status.missing { background: #ffcccb; color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test Admin Menu Links</h1>
+    
+    <h2>Trang chủ Admin</h2>
+    <a href="/admin" class="test-link">Admin Home</a>
+    <a href="/admin/home" class="test-link">Admin Home (alias)</a>
+    
+    <h2>Quản lý phòng</h2>
+    <a href="/admin/rooms" class="test-link">Danh sách phòng</a>
+    <a href="/admin/room-types" class="test-link">Loại phòng</a>
+    <a href="/admin/rooms/add" class="test-link">Thêm phòng</a>
+    
+    <h2>Quản lý đặt phòng</h2>
+    <a href="/admin/bookings" class="test-link">Danh sách đặt phòng</a>
+    <a href="/admin/bookings/add" class="test-link">Thêm đặt phòng</a>
+    
+    <h2>Quản lý dịch vụ</h2>
+    <a href="/admin/services" class="test-link">Danh sách dịch vụ <span class="status ok">FIXED</span></a>
+    <a href="/admin/services/history" class="test-link">Lịch sử dịch vụ <span class="status ok">FIXED</span></a>
+    
+    <h2>Quản lý khách hàng</h2>
+    <a href="/admin/customers" class="test-link">Danh sách khách hàng <span class="status ok">FIXED</span></a>
+    
+    <h2>Báo cáo & thống kê</h2>
+    <a href="/admin/reports" class="test-link">Báo cáo</a>
+    <a href="/admin/statistics" class="test-link">Thống kê</a>
+    
+    <h2>Test Routes</h2>
+    <a href="/admin/test" class="test-link">Test AdminLTE <span class="status ok">WORKING</span></a>
+    
+    <script>
+        // Test các link khi click
+        document.querySelectorAll('.test-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch(this.href)
+                    .then(response => {
+                        if (response.ok) {
+                            const status = this.querySelector('.status') || document.createElement('span');
+                            status.className = 'status ok';
+                            status.textContent = 'OK';
+                            if (!this.querySelector('.status')) {
+                                this.appendChild(status);
+                            }
+                        } else {
+                            const status = this.querySelector('.status') || document.createElement('span');
+                            status.className = 'status missing';
+                            status.textContent = 'ERROR ' + response.status;
+                            if (!this.querySelector('.status')) {
+                                this.appendChild(status);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        const status = this.querySelector('.status') || document.createElement('span');
+                        status.className = 'status missing';
+                        status.textContent = 'FAILED';
+                        if (!this.querySelector('.status')) {
+                            this.appendChild(status);
+                        }
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
