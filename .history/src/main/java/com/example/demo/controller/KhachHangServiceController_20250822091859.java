@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.example.demo.dto.AggregatedOrder;
 import com.example.demo.model.Booking;
 import com.example.demo.model.ServiceOrder;
 import com.example.demo.model.User;
 import com.example.demo.service.BookingService;
 import com.example.demo.service.ServiceOrderService;
 import com.example.demo.service.UserService;
+import com.example.demo.dto.AggregatedOrder;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -300,30 +300,6 @@ public class KhachHangServiceController {
                 omap.add(m);
             }
             result.put("orders", omap);
-            // Aggregated orders
-            java.util.List<java.util.Map<String, Object>> aagg = new java.util.ArrayList<>();
-            java.util.Map<String, java.util.Map<String, Object>> temp = new java.util.LinkedHashMap<>();
-            for (ServiceOrder o : orders) {
-                String k = o.getServiceName() != null ? o.getServiceName() : "Unknown";
-                if (!temp.containsKey(k)) {
-                    java.util.Map<String, Object> am = new java.util.HashMap<>();
-                    am.put("serviceName", k);
-                    am.put("totalQuantity", 0);
-                    am.put("totalAmount", 0);
-                    am.put("orders", new java.util.ArrayList<java.util.Map<String,Object>>());
-                    temp.put(k, am);
-                }
-                java.util.Map<String, Object> am = temp.get(k);
-                int q = o.getQuantity() != null ? o.getQuantity() : 0;
-                double ta = o.getTotalAmount() != null ? o.getTotalAmount() : 0;
-                am.put("totalQuantity", (int)am.get("totalQuantity") + q);
-                am.put("totalAmount", (double)am.get("totalAmount") + ta);
-                java.util.Map<String,Object> om = new java.util.HashMap<>();
-                om.put("id", o.getId()); om.put("quantity", q); om.put("totalAmount", ta); om.put("status", o.getStatus());
-                ((java.util.List)am.get("orders")).add(om);
-            }
-            aagg.addAll(temp.values());
-            result.put("aggregatedOrders", aagg);
             result.put("paidBookingsCount", paidBookings.size());
             return result;
         } catch (Exception e) {

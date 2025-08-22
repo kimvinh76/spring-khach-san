@@ -138,10 +138,10 @@
                             <i class="bi bi-receipt"></i> Xem hóa đơn thanh toán
                         </a>
                         
-                        <!-- Nút thanh toán: giai đoạn 1 (phòng) hoặc giai đoạn 2 (dịch vụ đã xác nhận chưa trả) -->
-                        <a th:if="${booking.status == 'Đã xác nhận' or (booking.status != null and booking.status.contains('Đã thanh toán'))}" 
-                           th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-warning">
-                            <i class="bi bi-credit-card"></i> Thanh toán / Dịch vụ
+                        <!-- Nút thanh toán nếu đã xác nhận -->
+                        <a th:if="${booking.status == 'Đã xác nhận'}" 
+                           th:href="@{'/khach/payment/' + ${booking.id}}" class="btn btn-warning">
+                            <i class="bi bi-credit-card"></i> Thanh toán
                         </a>
                         
                         <!-- Nút đặt dịch vụ nếu đã xác nhận hoặc thanh toán -->

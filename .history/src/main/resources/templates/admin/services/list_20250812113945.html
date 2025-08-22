@@ -144,7 +144,7 @@
 
         <!-- Danh sách dịch vụ -->
         <div class="services-container">
-            <!-- Hiển thị theo nhóm booking (chi tiết từng dịch vụ) -->
+            <!-- Hiển thị theo nhóm booking -->
             <div th:if="${not #maps.isEmpty(servicesByBooking)}">
                 <div th:each="bookingEntry : ${servicesByBooking}" class="service-card">
                     <div class="service-card-header">
@@ -155,6 +155,7 @@
                                 (<span th:text="${#lists.size(bookingEntry.value)}"></span> dịch vụ)
                             </span>
                             <div class="d-flex gap-2">
+                                <!-- Chỉ hiển thị nút hoàn thành nếu booking có dịch vụ chưa hoàn thành -->
                                 <form th:if="${bookingEntry.value.?[status == 'Chờ xác nhận'].size() > 0}"
                                       th:action="@{'/admin/services/confirm-booking/' + ${bookingEntry.key}}" 
                                       method="post" class="d-inline">
@@ -203,6 +204,7 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="d-flex gap-1 justify-content-end flex-wrap">
+                                    <!-- Chỉ hiển thị nút nếu dịch vụ chưa hoàn thành hoặc chưa bị từ chối -->
                                     <form th:if="${service.status == 'Chờ xác nhận'}"
                                           th:action="@{'/admin/services/' + ${service.id} + '/confirm'}" 
                                           method="post" class="d-inline">
@@ -232,46 +234,6 @@
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Nếu không có servicesByBooking nhưng có aggregated view, show aggregated summaries -->
-            <div th:if="${#maps.isEmpty(servicesByBooking) and not #maps.isEmpty(servicesAggregatedByBooking)}">
-                <div th:each="entry : ${servicesAggregatedByBooking.entrySet()}">
-                    <div class="card mb-3">
-                        <div class="card-header">Booking ID: <span th:text="${entry.key}"></span></div>
-                        <div class="card-body">
-                            <div th:each="agg : ${entry.value}">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong th:text="${agg.serviceName}"></strong>
-                                        <span class="text-muted">x</span>
-                                        <span th:text="${agg.totalQuantity}"></span>
-                                    </div>
-                                    <div>
-                                        <span class="fw-bold" th:text="${#numbers.formatDecimal(agg.totalAmount, 0, 'COMMA', 2, 'POINT')}"></span>
-                                        <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" th:attr="data-bs-target=${'#agg-' + ${entry.key} + '-' + ${agg.serviceName}.replaceAll('[^a-zA-Z0-9]','-')}">Chi tiết</button>
-                                    </div>
-                                </div>
-                                <div th:id="${'agg-' + ${entry.key} + '-' + ${agg.serviceName}.replaceAll('[^a-zA-Z0-9]','-')}" class="collapse mt-2">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr><th>Service Order ID</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr th:each="o : ${agg.orders}">
-                                                <td th:text="${o.id}"></td>
-                                                <td th:text="${o.quantity}"></td>
-                                                <td th:text="${o.price}"></td>
-                                                <td th:text="${o.price * o.quantity}"></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <hr/>
                             </div>
                         </div>
                     </div>

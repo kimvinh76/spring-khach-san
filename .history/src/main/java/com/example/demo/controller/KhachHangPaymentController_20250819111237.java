@@ -116,34 +116,13 @@ public class KhachHangPaymentController {
 
             // Calculate delta payable parts
             boolean roomAlreadyPaid = booking.getStatus() != null && booking.getStatus().contains("Đã thanh toán");
-            
-            // Stage 1: Room + confirmed services at time of booking (pay together)
-            // Stage 2: Additional services confirmed after room payment
-            long roomAndInitialServicesTotal = roomTotal + (long) serviceTotal;
-            
-            // Eligible services (confirmed/completed & unpaid)
+            long roomPayable = roomAlreadyPaid ? 0 : roomTotal;
+                // Eligible services for payment = unpaid & (Đang xử lý | Hoàn thành | Đã xác nhận)
             java.util.List<ServiceOrder> payableServices = serviceOrderService.findUnpaidConfirmedByBookingId(booking.getId());
             double servicePayableTotal = payableServices.stream()
                 .filter(o -> o.getTotalAmount() != null)
-                .mapToDouble(ServiceOrder::getTotalAmount)
-                .sum();
-
-            // Paid portion of services (confirmed but already invoiced) = all confirmed - unpaid confirmed
-            double servicePaidPortion = serviceTotal - servicePayableTotal;
-            if (servicePaidPortion < 0) servicePaidPortion = 0; // guard
-
-            // Full final total (room + all confirmed services) for reference
-            long fullTotal = roomTotal + (long) serviceTotal;
-
-            // Display total logic:
-            //  - If room not yet paid: show room + existing confirmed services (stage 1)
-            //  - If room paid: show only additional unpaid services (stage 2)
-            long displayTotal;
-            if (!roomAlreadyPaid) {
-                displayTotal = roomAndInitialServicesTotal; // stage 1: room + confirmed services
-            } else {
-                displayTotal = (long) servicePayableTotal; // stage 2: only additional services
-            }
+                .mapToDouble(ServiceOrder::getTotalAmount).sum();
+            long total = roomPayable + (long) servicePayableTotal;
 
             // Thông báo về dịch vụ
             String serviceMessage = "";
@@ -151,33 +130,27 @@ public class KhachHangPaymentController {
                 serviceMessage = "Bạn có " + pendingServices + " dịch vụ đang chờ xác nhận. " +
                                "Số tiền này sẽ được cập nhật sau khi admin xác nhận.";
             }
-            // Re-evaluate canPay based on payment stages
-            if (!roomAlreadyPaid) {
-                canPay = true; // stage 1: room + confirmed services
-                paymentMessage = "Thanh toán tiền phòng và dịch vụ đã xác nhận.";
-            } else if (servicePayableTotal > 0) {
-                canPay = true; // stage 2: additional services only
-                paymentMessage = "Bạn có dịch vụ phát sinh chưa thanh toán.";
-            } else {
-                canPay = false;
-                paymentMessage = "Booking đã thanh toán đầy đủ.";
-            }
-            
-            // Calculate roomPayable for template compatibility
-            long roomPayable = roomAlreadyPaid ? 0 : roomTotal;
+                // Re-evaluate canPay based on delta
+                if (roomPayable > 0 || servicePayableTotal > 0) {
+                    canPay = true;
+                    if (roomAlreadyPaid && servicePayableTotal > 0) {
+                        paymentMessage = "Bạn có dịch vụ đã xác nhận chưa thanh toán.";
+                    }
+                } else {
+                    canPay = false;
+                    if (roomAlreadyPaid) {
+                        paymentMessage = "Booking đã thanh toán đầy đủ.";
+                    }
+                }
 
             model.addAttribute("booking", booking);
             model.addAttribute("nights", nights);
             model.addAttribute("roomTotal", roomTotal);
             model.addAttribute("serviceTotal", (long) serviceTotal);
-            model.addAttribute("total", displayTotal); // total to display (dynamic)
-            model.addAttribute("fullTotal", fullTotal); // final total including unpaid confirmed services
-            model.addAttribute("servicePaidTotal", (long) servicePaidPortion);
-            model.addAttribute("displayTotal", displayTotal);
-            model.addAttribute("servicePayableTotal", (long) servicePayableTotal);
+            model.addAttribute("total", total);
             model.addAttribute("roomPayable", roomPayable);
+            model.addAttribute("servicePayableTotal", (long) servicePayableTotal);
             model.addAttribute("roomAlreadyPaid", roomAlreadyPaid);
-            model.addAttribute("roomAndInitialServicesTotal", roomAndInitialServicesTotal);
             model.addAttribute("serviceOrders", serviceOrders);
             model.addAttribute("canPay", canPay);
             model.addAttribute("paymentMessage", paymentMessage);
@@ -185,8 +158,7 @@ public class KhachHangPaymentController {
             model.addAttribute("confirmedServices", confirmedServices);
             model.addAttribute("pendingServices", pendingServices);
             model.addAttribute("user", user);
-            model.addAttribute("payableServicesCount", payableServices.size());
-            model.addAttribute("serviceOnly", roomAlreadyPaid && servicePayableTotal > 0);
+                model.addAttribute("payableServicesCount", payableServices.size());
 
             return "khachhang/payment/form";
             

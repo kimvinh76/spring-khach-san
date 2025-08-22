@@ -177,7 +177,6 @@ public class KhachHangPaymentController {
             model.addAttribute("servicePayableTotal", (long) servicePayableTotal);
             model.addAttribute("roomPayable", roomPayable);
             model.addAttribute("roomAlreadyPaid", roomAlreadyPaid);
-            model.addAttribute("roomAndInitialServicesTotal", roomAndInitialServicesTotal);
             model.addAttribute("serviceOrders", serviceOrders);
             model.addAttribute("canPay", canPay);
             model.addAttribute("paymentMessage", paymentMessage);
@@ -185,8 +184,7 @@ public class KhachHangPaymentController {
             model.addAttribute("confirmedServices", confirmedServices);
             model.addAttribute("pendingServices", pendingServices);
             model.addAttribute("user", user);
-            model.addAttribute("payableServicesCount", payableServices.size());
-            model.addAttribute("serviceOnly", roomAlreadyPaid && servicePayableTotal > 0);
+                model.addAttribute("payableServicesCount", payableServices.size());
 
             return "khachhang/payment/form";
             

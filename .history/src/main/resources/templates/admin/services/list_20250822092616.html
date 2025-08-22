@@ -144,138 +144,51 @@
 
         <!-- Danh sách dịch vụ -->
         <div class="services-container">
-            <!-- Hiển thị theo nhóm booking (chi tiết từng dịch vụ) -->
+            <!-- Hiển thị theo nhóm booking -->
             <div th:if="${not #maps.isEmpty(servicesByBooking)}">
-                <div th:each="bookingEntry : ${servicesByBooking}" class="service-card">
-                    <div class="service-card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>
-                                <i class="bi bi-calendar-check"></i>
-                                Booking #<span th:text="${bookingEntry.key}"></span>
-                                (<span th:text="${#lists.size(bookingEntry.value)}"></span> dịch vụ)
-                            </span>
-                            <div class="d-flex gap-2">
-                                <form th:if="${bookingEntry.value.?[status == 'Chờ xác nhận'].size() > 0}"
-                                      th:action="@{'/admin/services/confirm-booking/' + ${bookingEntry.key}}" 
-                                      method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-success btn-sm"
-                                            onclick="return confirm('Hoàn thành tất cả dịch vụ chờ xác nhận cho booking này?')">
-                                        <i class="bi bi-check-all"></i> Hoàn thành chờ xác nhận
-                                    </button>
-                                </form>
-                                <form th:if="${bookingEntry.value.?[status == 'Đang xử lý'].size() > 0}"
-                                      th:action="@{'/admin/services/complete-booking/' + ${bookingEntry.key}}" 
-                                      method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-primary btn-sm"
-                                            onclick="return confirm('Hoàn thành tất cả dịch vụ đang xử lý cho booking này?')">
-                                        <i class="bi bi-check-square-fill"></i> Hoàn thành đang xử lý
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Danh sách dịch vụ trong booking -->
-                    <div th:each="service : ${bookingEntry.value}" class="service-item">
-                        <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <strong th:text="${service.serviceType}">Loại dịch vụ</strong>
-                                <br>
-                                <small class="text-muted" th:text="${service.description}">Mô tả</small>
-                            </div>
-                            <div class="col-md-2">
-                                <strong th:text="${service.customerName}">Tên khách</strong>
-                                <br>
-                                <small class="text-muted" th:text="${service.phone}">SĐT</small>
-                            </div>
-                            <div class="col-md-2 text-center">
-                                <span class="status-badge" 
-                                      th:class="${'status-badge ' + 
-                                                 (service.status == 'Chờ xác nhận' ? 'status-pending' : 
-                                                  service.status == 'Đang xử lý' ? 'status-processing' : 
-                                                  service.status == 'Hoàn thành' ? 'status-completed' : 'status-rejected')}"
-                                      th:text="${service.status}">
-                                    Trạng thái
-                                </span>
-                            </div>
-                            <div class="col-md-2 text-center">
-                                <strong th:text="${#numbers.formatDecimal(service.totalAmount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
-                            </div>
-                            <div class="col-md-3">
-                                <div class="d-flex gap-1 justify-content-end flex-wrap">
-                                    <form th:if="${service.status == 'Chờ xác nhận'}"
-                                          th:action="@{'/admin/services/' + ${service.id} + '/confirm'}" 
-                                          method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-success btn-sm">
-                                            <i class="bi bi-check"></i>
-                                        </button>
-                                    </form>
-                                    <form th:if="${service.status == 'Đang xử lý'}"
-                                          th:action="@{'/admin/services/' + ${service.id} + '/complete'}" 
-                                          method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-primary btn-sm"
-                                                onclick="return confirm('Hoàn thành dịch vụ này?')">
-                                            <i class="bi bi-check-square"></i>
-                                        </button>
-                                    </form>
-                                    <button th:if="${service.status == 'Chờ xác nhận'}"
-                                            type="button" class="btn btn-warning btn-sm"
-                                            data-bs-toggle="modal" 
-                                            th:data-bs-target="'#rejectModal' + ${service.id}">
-                                        <i class="bi bi-x"></i>
-                                    </button>
-                                    
-                                    <!-- Xóa -->
-                                    <button type="button" class="btn btn-danger btn-sm"
-                                            data-bs-toggle="modal" 
-                                            th:data-bs-target="'#deleteModal' + ${service.id}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                    <div th:each="bookingId : ${#lists.arrayList(servicesAggregatedByBooking.keySet())}">
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>Booking ID: <strong th:text="${bookingId}"></strong></div>
+                                <div>
+                                    <a class="btn btn-sm btn-outline-secondary" th:href="@{'/admin/bookings/' + ${bookingId}}">View Booking</a>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Nếu không có servicesByBooking nhưng có aggregated view, show aggregated summaries -->
-            <div th:if="${#maps.isEmpty(servicesByBooking) and not #maps.isEmpty(servicesAggregatedByBooking)}">
-                <div th:each="entry : ${servicesAggregatedByBooking.entrySet()}">
-                    <div class="card mb-3">
-                        <div class="card-header">Booking ID: <span th:text="${entry.key}"></span></div>
-                        <div class="card-body">
-                            <div th:each="agg : ${entry.value}">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong th:text="${agg.serviceName}"></strong>
-                                        <span class="text-muted">x</span>
-                                        <span th:text="${agg.totalQuantity}"></span>
-                                    </div>
-                                    <div>
-                                        <span class="fw-bold" th:text="${#numbers.formatDecimal(agg.totalAmount, 0, 'COMMA', 2, 'POINT')}"></span>
-                                        <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" th:attr="data-bs-target=${'#agg-' + ${entry.key} + '-' + ${agg.serviceName}.replaceAll('[^a-zA-Z0-9]','-')}">Chi tiết</button>
+                            <div class="card-body">
+                                <div th:if="${servicesAggregatedByBooking[bookingId]}">
+                                    <div th:each="agg : ${servicesAggregatedByBooking[bookingId]}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong th:text="${agg.serviceName}"></strong>
+                                                <span class="text-muted">x</span>
+                                                <span th:text="${agg.totalQuantity}"></span>
+                                            </div>
+                                            <div>
+                                                <span class="fw-bold" th:text="${#numbers.formatDecimal(agg.totalAmount, 0, 'COMMA', 2, 'POINT')}"></span>
+                                                <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" th:attr="data-bs-target=${'#agg-' + ${bookingId} + '-' + ${agg.serviceName}.replaceAll('[^a-zA-Z0-9]','-')}">Chi tiết</button>
+                                            </div>
+                                        </div>
+                                        <div th:id="${'agg-' + ${bookingId} + '-' + ${agg.serviceName}.replaceAll('[^a-zA-Z0-9]','-')}" class="collapse mt-2">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr><th>Service Order ID</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr th:each="o : ${agg.orders}">
+                                                        <td th:text="${o.id}"></td>
+                                                        <td th:text="${o.quantity}"></td>
+                                                        <td th:text="${o.price}"></td>
+                                                        <td th:text="${o.price * o.quantity}"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <hr/>
                                     </div>
                                 </div>
-                                <div th:id="${'agg-' + ${entry.key} + '-' + ${agg.serviceName}.replaceAll('[^a-zA-Z0-9]','-')}" class="collapse mt-2">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr><th>Service Order ID</th><th>Qty</th><th>Price</th><th>Total</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr th:each="o : ${agg.orders}">
-                                                <td th:text="${o.id}"></td>
-                                                <td th:text="${o.quantity}"></td>
-                                                <td th:text="${o.price}"></td>
-                                                <td th:text="${o.price * o.quantity}"></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <hr/>
                             </div>
                         </div>
                     </div>
-                </div>
             </div>
 
             <!-- Dịch vụ không có booking -->

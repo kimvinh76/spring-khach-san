@@ -276,43 +276,30 @@
                         <div class="total-amount">
                             <i class="bi bi-currency-dollar"></i>
                             <div class="mb-2">
-                                <span class="badge bg-primary" th:if="${!roomAlreadyPaid}">🎯 Giai đoạn 1: Thanh toán cùng lúc</span>
-                                <span class="badge bg-success" th:if="${roomAlreadyPaid and servicePayableTotal > 0}">🎯 Giai đoạn 2: Dịch vụ phát sinh</span>
-                                <span class="badge bg-success" th:if="${roomAlreadyPaid and (servicePayableTotal == null or servicePayableTotal == 0)}">✅ Hoàn tất</span>
+                                <span class="badge bg-warning text-dark" th:if="${roomPayable > 0}">Giai đoạn 1: Thanh toán tiền phòng</span>
+                                <span class="badge bg-info" th:if="${roomPayable == 0 and servicePayableTotal > 0}">Giai đoạn 2: Thanh toán dịch vụ phát sinh</span>
+                                <span class="badge bg-success" th:if="${roomPayable == 0 and (servicePayableTotal == null or servicePayableTotal == 0)}">Hoàn tất</span>
                             </div>
-                            
-                            <!-- Stage 1: Room + existing confirmed services together -->
-                            <div th:if="${!roomAlreadyPaid}">
-                                Thanh toán phòng + dịch vụ đã xác nhận: 
-                                <strong th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
-                                <div class="small mt-2">
-                                    Bao gồm: tiền phòng <span th:text="${#numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                                    <span th:if="${serviceTotal > 0}"> + dịch vụ <span th:text="${#numbers.formatDecimal(serviceTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span></span>
-                                </div>
-                            </div>
-                            
-                            <!-- Stage 2: Room paid, still have unpaid confirmed services -->
+                            <!-- Stage 2: room paid and still have unpaid confirmed services -->
                             <div th:if="${roomAlreadyPaid == true and servicePayableTotal != null and servicePayableTotal > 0}">
                                 <div class="small text-light">Tổng cuối (phòng + tất cả dịch vụ):
                                     <span th:text="${#numbers.formatDecimal(fullTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'" style="text-decoration:line-through; opacity:0.9"></span>
                                 </div>
-                                Thanh toán dịch vụ phát sinh còn lại:
+                                Số còn phải thanh toán (dịch vụ):
                                 <strong th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
                                 <div class="small mt-2">Đã thanh toán trước đó: 
                                     <span th:text="${#numbers.formatDecimal(roomTotal + (servicePaidTotal != null ? servicePaidTotal : 0), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
                                 </div>
                             </div>
-                            
-                            <!-- Completed: All paid -->
-                            <div th:if="${roomAlreadyPaid == true and (servicePayableTotal == null or servicePayableTotal == 0)}">
-                                Đã thanh toán đầy đủ: 
-                                <strong th:text="${#numbers.formatDecimal(fullTotal != null ? fullTotal : total, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                            <!-- Stage 1 OR completed -->
+                            <div th:unless="${roomAlreadyPaid == true and servicePayableTotal != null and servicePayableTotal > 0}">
+                                Tổng thanh toán: 
+                                <strong th:text="${displayTotal != null ? #numbers.formatDecimal(displayTotal, 0, 'COMMA', 0, 'POINT') : (#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT'))} + ' VNĐ'"></strong>
                             </div>
-                            
                             <hr class="border-light">
                             <div class="text-start small">
-                                <div>Tiền phòng: <strong th:text="${#numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
-                                <div>Dịch vụ (đã thanh toán): <strong th:text="${#numbers.formatDecimal(servicePaidTotal != null ? servicePaidTotal : 0, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
+                                <div>Tiền phòng phải trả: <strong th:text="${#numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
+                                <div>Dịch vụ (đã xác nhận & đã thanh toán): <strong th:text="${#numbers.formatDecimal(servicePaidTotal != null ? servicePaidTotal : 0, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
                                 <div th:if="${servicePayableTotal != null and servicePayableTotal > 0}">Dịch vụ (chưa thanh toán): <strong th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
                             </div>
                         </div>

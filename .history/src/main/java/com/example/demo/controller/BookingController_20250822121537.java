@@ -190,19 +190,14 @@ public class BookingController {
 
     boolean roomAlreadyPaid = booking.getStatus() != null && booking.getStatus().contains("Đã thanh toán");
     long total = roomTotal + (long) confirmedServiceTotal; // full total (room + confirmed services)
-    
-    // Stage 1: Room + confirmed services at booking time (pay together)
-    // Stage 2: Additional services confirmed after room payment
+    long roomPayable = roomAlreadyPaid ? 0 : roomTotal;
     long servicePaidPortion = (long) (confirmedServiceTotal - servicePayableTotal);
     if (servicePaidPortion < 0) servicePaidPortion = 0;
-    
-    long displayTotal; // amount to show for current payment stage
+    long displayTotal; // what we show as already paid/ to pay first stage
     if (!roomAlreadyPaid) {
-        // Stage 1: Pay room + existing confirmed services together
-        displayTotal = roomTotal + (long) confirmedServiceTotal;
+        displayTotal = roomTotal; // stage 1 only room
     } else {
-        // Stage 2: Only show additional unpaid services
-        displayTotal = roomTotal + servicePaidPortion; // what's already paid
+        displayTotal = roomTotal + servicePaidPortion; // room + paid services
     }
     model.addAttribute("booking", booking);
     model.addAttribute("nights", nights);
@@ -212,7 +207,7 @@ public class BookingController {
     model.addAttribute("displayTotal", displayTotal);
     model.addAttribute("fullTotal", total);
     model.addAttribute("servicePaidTotal", servicePaidPortion);
-    model.addAttribute("roomAndInitialServicesTotal", roomTotal + (long) confirmedServiceTotal); // stage 1 total
+    model.addAttribute("roomPayable", roomPayable);
     model.addAttribute("serviceOrders", serviceOrders);
     model.addAttribute("canOrderServices", true);
     model.addAttribute("roomAlreadyPaid", roomAlreadyPaid);

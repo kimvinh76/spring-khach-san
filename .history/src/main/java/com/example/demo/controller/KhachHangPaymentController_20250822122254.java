@@ -151,20 +151,16 @@ public class KhachHangPaymentController {
                 serviceMessage = "Bạn có " + pendingServices + " dịch vụ đang chờ xác nhận. " +
                                "Số tiền này sẽ được cập nhật sau khi admin xác nhận.";
             }
-            // Re-evaluate canPay based on payment stages
-            if (!roomAlreadyPaid) {
-                canPay = true; // stage 1: room + confirmed services
-                paymentMessage = "Thanh toán tiền phòng và dịch vụ đã xác nhận.";
-            } else if (servicePayableTotal > 0) {
-                canPay = true; // stage 2: additional services only
-                paymentMessage = "Bạn có dịch vụ phát sinh chưa thanh toán.";
-            } else {
-                canPay = false;
-                paymentMessage = "Booking đã thanh toán đầy đủ.";
-            }
-            
-            // Calculate roomPayable for template compatibility
-            long roomPayable = roomAlreadyPaid ? 0 : roomTotal;
+                // Re-evaluate canPay based on delta
+                if (roomPayable > 0) {
+                    canPay = true; // first stage payment (room only)
+                } else if (servicePayableTotal > 0 && roomAlreadyPaid) {
+                    canPay = true; // second stage: service-only payment available
+                    paymentMessage = "Bạn có dịch vụ đã xác nhận chưa thanh toán.";
+                } else {
+                    canPay = false;
+                    if (roomAlreadyPaid) paymentMessage = "Booking đã thanh toán đầy đủ.";
+                }
 
             model.addAttribute("booking", booking);
             model.addAttribute("nights", nights);
@@ -177,7 +173,6 @@ public class KhachHangPaymentController {
             model.addAttribute("servicePayableTotal", (long) servicePayableTotal);
             model.addAttribute("roomPayable", roomPayable);
             model.addAttribute("roomAlreadyPaid", roomAlreadyPaid);
-            model.addAttribute("roomAndInitialServicesTotal", roomAndInitialServicesTotal);
             model.addAttribute("serviceOrders", serviceOrders);
             model.addAttribute("canPay", canPay);
             model.addAttribute("paymentMessage", paymentMessage);
@@ -185,8 +180,7 @@ public class KhachHangPaymentController {
             model.addAttribute("confirmedServices", confirmedServices);
             model.addAttribute("pendingServices", pendingServices);
             model.addAttribute("user", user);
-            model.addAttribute("payableServicesCount", payableServices.size());
-            model.addAttribute("serviceOnly", roomAlreadyPaid && servicePayableTotal > 0);
+                model.addAttribute("payableServicesCount", payableServices.size());
 
             return "khachhang/payment/form";
             

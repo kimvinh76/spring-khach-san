@@ -212,7 +212,7 @@ public class BookingController {
     model.addAttribute("displayTotal", displayTotal);
     model.addAttribute("fullTotal", total);
     model.addAttribute("servicePaidTotal", servicePaidPortion);
-    model.addAttribute("roomAndInitialServicesTotal", roomTotal + (long) confirmedServiceTotal); // stage 1 total
+    model.addAttribute("roomPayable", roomPayable);
     model.addAttribute("serviceOrders", serviceOrders);
     model.addAttribute("canOrderServices", true);
     model.addAttribute("roomAlreadyPaid", roomAlreadyPaid);

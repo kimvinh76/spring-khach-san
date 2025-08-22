@@ -222,46 +222,23 @@
 
                     <!-- Nút hành động -->
                     <div class="action-buttons text-center">
-                        <!-- Giai đoạn 1: thanh toán phòng + dịch vụ có sẵn cùng lúc -->
-                        <form th:if="${!roomAlreadyPaid}" th:action="@{'/khachhang/payment/' + ${booking.id}}" method="post" class="d-inline payment-form" 
-                              th:data-amount="${roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal)}" th:data-booking="${booking.id}">
+                        <!-- Giai đoạn 1: thanh toán phòng -->
+                        <form th:if="${roomPayable > 0}" th:action="@{'/khachhang/payment/' + ${booking.id}}" method="post" class="d-inline payment-form" th:data-amount="${roomTotal}" th:data-booking="${booking.id}">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <button type="submit" class="btn btn-payment btn-lg">
-                                <i class="bi bi-credit-card"></i> Thanh toán phòng + dịch vụ
-                                <div class="small">(<span th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
+                                <i class="bi bi-credit-card"></i> Thanh toán tiền phòng
                             </button>
                         </form>
-                        
-                        <!-- Giai đoạn 2: thanh toán dịch vụ phát sinh -->
-                        <form th:if="${roomAlreadyPaid and servicePayableTotal > 0}" th:action="@{'/khachhang/payment/' + ${booking.id} + '/services'}" method="post" class="d-inline payment-form" th:data-amount="${servicePayableTotal}" th:data-booking="${booking.id}">
+                        <!-- Giai đoạn 2: thanh toán dịch vụ -->
+                        <form th:if="${roomPayable == 0 and servicePayableTotal > 0}" th:action="@{'/khachhang/payment/' + ${booking.id} + '/services'}" method="post" class="d-inline payment-form" th:data-amount="${servicePayableTotal}" th:data-booking="${booking.id}">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <button type="submit" class="btn btn-service btn-lg">
-                                <i class="bi bi-bag-check"></i> Thanh toán dịch vụ phát sinh
-                                <div class="small">(<span th:text="${payableServicesCount}">0</span> dịch vụ - <span th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
+                                <i class="bi bi-bag-check"></i> Thanh toán dịch vụ (<span th:text="${payableServicesCount}">0</span>)
                             </button>
                         </form>
-                        
                         <!-- Hoàn tất -->
-                        <div th:if="${roomAlreadyPaid and (servicePayableTotal == null or servicePayableTotal == 0)}" class="alert alert-success mt-3">
-                            <i class="bi bi-check-circle"></i> <strong>Đã thanh toán đầy đủ!</strong>
-                            <div class="small">Tổng: <span th:text="${#numbers.formatDecimal(fullTotal != null ? fullTotal : total, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span></div>
-                        </div>
-                        
-                        <!-- Debug thông tin (tạm thời để kiểm tra) -->
-                        <div class="alert alert-info mt-3 small">
-                            <strong>🔍 Debug Info:</strong><br>
-                            roomAlreadyPaid: <span th:text="${roomAlreadyPaid}"></span><br>
-                            servicePayableTotal: <span th:text="${servicePayableTotal}"></span><br>
-                            booking.status: <span th:text="${booking.status}"></span><br>
-                            roomAndInitialServicesTotal: <span th:text="${roomAndInitialServicesTotal}"></span>
-                        </div>
-                        
-                        <!-- Nút dự phòng nếu không có nút nào hiển thị -->
-                        <div th:if="${!roomAlreadyPaid}" class="mt-3">
-                            <a th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-warning btn-lg">
-                                <i class="bi bi-exclamation-triangle"></i> Chuyển đến thanh toán
-                                <div class="small">Giai đoạn 1: <span th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span></div>
-                            </a>
+                        <div th:if="${roomPayable == 0 and (servicePayableTotal == null or servicePayableTotal == 0)}" class="alert alert-success mt-3">
+                            <i class="bi bi-check-circle"></i> Đã thanh toán đầy đủ.
                         </div>
                         
                         <!-- Thông báo khi chờ xác nhận -->

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.example.demo.dto.AggregatedOrder;
 import com.example.demo.model.ServiceOrder;
 import com.example.demo.service.ServiceOrderService;
 
@@ -51,22 +50,9 @@ public class AdminServiceController {
         Map<Long, List<ServiceOrder>> servicesByBooking = services.stream()
             .filter(s -> s.getBookingId() != null)
             .collect(java.util.stream.Collectors.groupingBy(ServiceOrder::getBookingId));
-
-        // Build aggregated view per booking (group by serviceType inside each booking)
-        java.util.Map<Long, List<AggregatedOrder>> servicesAggregatedByBooking = new java.util.LinkedHashMap<>();
-        for (Map.Entry<Long, List<ServiceOrder>> e : servicesByBooking.entrySet()) {
-            java.util.Map<String, AggregatedOrder> m = new java.util.LinkedHashMap<>();
-            for (ServiceOrder so : e.getValue()) {
-                String key = so.getServiceType() != null ? so.getServiceType() : "Unknown";
-                AggregatedOrder ag = m.computeIfAbsent(key, k -> new AggregatedOrder(k));
-                ag.addOrder(so);
-            }
-            servicesAggregatedByBooking.put(e.getKey(), new java.util.ArrayList<>(m.values()));
-        }
         
         model.addAttribute("services", services);
         model.addAttribute("servicesByBooking", servicesByBooking);
-    model.addAttribute("servicesAggregatedByBooking", servicesAggregatedByBooking);
         model.addAttribute("selectedStatus", status);
         
         // Thống kê
