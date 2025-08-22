@@ -237,8 +237,8 @@
                         </div>
                         <!-- Giai đoạn 1: thanh toán phòng + dịch vụ có sẵn cùng lúc -->
                         <div>
-                            <!-- Hiển thị nút thanh toán khi phòng chưa thanh toán và không ở trạng thái 'Chờ xác nhận' -->
-                            <div th:if="${!roomAlreadyPaid and booking.status != 'Chờ xác nhận'}">
+                            <!-- Hiển thị nút thanh toán chỉ khi phòng chưa thanh toán và được phép thanh toán (canPay) -->
+                            <div th:if="${!roomAlreadyPaid and canPay}">
                                 <a th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-payment btn-lg">
                                     <i class="bi bi-credit-card"></i> Thanh toán
                                     <div class="small">(<span th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
@@ -254,7 +254,7 @@
                         
                         <!-- Giai đoạn 2: thanh toán dịch vụ phát sinh -->
                         <div>
-                            <div th:if="${roomAlreadyPaid and servicePayableTotal > 0 and booking.status != 'Chờ xác nhận'}">
+                            <div th:if="${roomAlreadyPaid and servicePayableTotal > 0 and canPay}">
                                 <a th:href="@{'/khachhang/payment/' + ${booking.id} + '/services'}" class="btn btn-service btn-lg">
                                     <i class="bi bi-bag-check"></i> Thanh toán dịch vụ thêm
                                     <div class="small">(<span th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>

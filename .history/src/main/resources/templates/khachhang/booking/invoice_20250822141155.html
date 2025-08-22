@@ -236,35 +236,19 @@
                             </div>
                         </div>
                         <!-- Giai đoạn 1: thanh toán phòng + dịch vụ có sẵn cùng lúc -->
-                        <div>
-                            <!-- Hiển thị nút thanh toán khi phòng chưa thanh toán và không ở trạng thái 'Chờ xác nhận' -->
-                            <div th:if="${!roomAlreadyPaid and booking.status != 'Chờ xác nhận'}">
-                                <a th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-payment btn-lg">
-                                    <i class="bi bi-credit-card"></i> Thanh toán
-                                    <div class="small">(<span th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
-                                </a>
-                            </div>
-                            <!-- Nếu đang chờ admin xác nhận, hiển thị nút vô hiệu hóa rõ ràng -->
-                            <div th:if="${!roomAlreadyPaid and booking.status == 'Chờ xác nhận'}">
-                                <button class="btn btn-secondary btn-lg" type="button" disabled>
-                                    <i class="bi bi-clock"></i> Chờ xác nhận
-                                </button>
-                            </div>
+                        <div th:if="${!roomAlreadyPaid}">
+                            <a th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-payment btn-lg">
+                                <i class="bi bi-credit-card"></i> Thanh toán
+                                <div class="small">(<span th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
+                            </a>
                         </div>
                         
                         <!-- Giai đoạn 2: thanh toán dịch vụ phát sinh -->
-                        <div>
-                            <div th:if="${roomAlreadyPaid and servicePayableTotal > 0 and booking.status != 'Chờ xác nhận'}">
-                                <a th:href="@{'/khachhang/payment/' + ${booking.id} + '/services'}" class="btn btn-service btn-lg">
-                                    <i class="bi bi-bag-check"></i> Thanh toán dịch vụ thêm
-                                    <div class="small">(<span th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
-                                </a>
-                            </div>
-                            <div th:if="${roomAlreadyPaid and servicePayableTotal > 0 and booking.status == 'Chờ xác nhận'}">
-                                <button class="btn btn-secondary btn-lg" type="button" disabled>
-                                    <i class="bi bi-clock"></i> Chờ xác nhận
-                                </button>
-                            </div>
+                        <div th:if="${roomAlreadyPaid and servicePayableTotal > 0}">
+                            <a th:href="@{'/khachhang/payment/' + ${booking.id} + '/services'}" class="btn btn-service btn-lg">
+                                <i class="bi bi-bag-check"></i> Thanh toán dịch vụ thêm
+                                <div class="small">(<span th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
+                            </a>
                         </div>
                         
                         <!-- Hoàn tất -->
@@ -274,17 +258,9 @@
                         
                         <!-- Nút đặt dịch vụ thêm -->
                         <div class="mt-3">
-                            <!-- Cho phép đặt thêm dịch vụ chỉ khi booking không đang ở trạng thái 'Chờ xác nhận' -->
-                            <div th:if="${booking.status != 'Chờ xác nhận'}">
-                                <a th:href="@{'/khachhang/services/list?bookingId=' + ${booking.id}}" class="btn btn-outline-primary">
-                                    <i class="bi bi-plus-circle"></i> Đặt thêm dịch vụ
-                                </a>
-                            </div>
-                            <div th:if="${booking.status == 'Chờ xác nhận'}">
-                                <button class="btn btn-outline-secondary" type="button" disabled>
-                                    <i class="bi bi-plus-circle"></i> Đặt thêm dịch vụ (khóa)
-                                </button>
-                            </div>
+                            <a th:href="@{'/khachhang/services/list?bookingId=' + ${booking.id}}" class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Đặt thêm dịch vụ
+                            </a>
                             <a href="/rooms" class="btn btn-outline-secondary">
                                 <i class="bi bi-house"></i> Về trang chủ
                             </a>

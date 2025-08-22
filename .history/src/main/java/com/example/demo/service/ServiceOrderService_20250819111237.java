@@ -98,24 +98,6 @@ public class ServiceOrderService {
 
     // --- New helpers for payments ---
     /**
-     * Get all confirmed services by booking ID (regardless of payment status)
-     */
-    public List<ServiceOrder> findConfirmedByBookingId(Long bookingId) {
-        List<ServiceOrder> all = findByBookingId(bookingId);
-        if (all == null) return java.util.Collections.emptyList();
-        return all.stream()
-                .filter(o -> {
-                    String st = o.getStatus();
-                    return st != null && (
-                        st.contains("Đã xác nhận") ||
-                        st.contains("Đang xử lý") ||
-                        st.contains("Hoàn thành")
-                    );
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Unpaid = orders without invoice attached.
      * Eligible = status contains 'Đã xác nhận' or 'Hoàn thành'.
      */

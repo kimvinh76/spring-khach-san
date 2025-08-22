@@ -67,9 +67,27 @@ public class KhachHangPaymentController {
                 return "redirect:/khachhang/services/my-orders";
             }
 
-            // Logic linh hoạt cho thanh toán - we'll evaluate after we inspect service orders
+            // Logic linh hoạt cho thanh toán
             boolean canPay = false;
             String paymentMessage = "";
+            
+            if (booking.getStatus() == null) {
+                paymentMessage = "Booking chưa có trạng thái. Vui lòng liên hệ admin.";
+            } else if (booking.getStatus().contains("Đã thanh toán")) {
+                paymentMessage = "Booking này đã được thanh toán thành công!";
+            } else if (booking.getStatus().equals("Đã xác nhận")) {
+                canPay = true;
+                paymentMessage = "Booking đã được xác nhận. Bạn có thể thanh toán ngay!";
+            } else if (booking.getStatus().equals("Chờ xác nhận")) {
+                // If booking is waiting for admin confirmation, do NOT allow payment from customer
+                paymentMessage = "Booking đang chờ admin xác nhận. Vui lòng chờ admin xác nhận trước khi thanh toán.";
+                canPay = false;
+            } else if (booking.getStatus().contains("từ chối")) {
+                paymentMessage = "Booking đã bị từ chối. Không thể thanh toán.";
+            } else {
+                paymentMessage = "Trạng thái booking: " + booking.getStatus();
+                canPay = true; // Mặc định cho phép thanh toán
+            }
 
             // Tính toán số tiền
             long nights = java.time.temporal.ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
@@ -78,27 +96,18 @@ public class KhachHangPaymentController {
             Double priceBase = booking.getRoom().getRoomType().getPriceBase();
             long roomTotal = nights * (priceBase != null ? priceBase.longValue() : 0);
             
-            // Lấy tất cả dịch vụ (để phân loại theo trạng thái)
+            // Lấy tất cả dịch vụ (không phân biệt trạng thái)
             List<ServiceOrder> serviceOrders = serviceOrderService.findByBookingId(booking.getId());
-            double serviceTotal = 0.0; // sum of services in allowed statuses
+            double serviceTotal = 0.0; // all services excluding explicit rejected
             int confirmedServices = 0;
             int pendingServices = 0;
-
-            // Define allowed statuses that count toward payable/confirmed services
-            java.util.Set<String> allowedStatuses = new java.util.HashSet<>();
-            allowedStatuses.add("Đã xác nhận");
-            allowedStatuses.add("Đang xử lý");
-            allowedStatuses.add("Hoàn thành");
-
+            
             if (serviceOrders != null && !serviceOrders.isEmpty()) {
                 for (ServiceOrder order : serviceOrders) {
                     if (order.getTotalAmount() != null) {
-                        String st = order.getStatus();
-                        if (st == null) st = "";
-                        if ("Chờ xác nhận".equals(st)) {
+                        if ("Chờ xác nhận".equals(order.getStatus())) {
                             pendingServices++;
-                        }
-                        if (allowedStatuses.contains(st)) {
+                        } else if (!"Từ chối".equals(order.getStatus())) {
                             serviceTotal += order.getTotalAmount();
                             confirmedServices++;
                         }
@@ -143,34 +152,19 @@ public class KhachHangPaymentController {
                 serviceMessage = "Bạn có " + pendingServices + " dịch vụ đang chờ xác nhận. " +
                                "Số tiền này sẽ được cập nhật sau khi admin xác nhận.";
             }
-            // Decide canPay using policy A:
-            // - Stage 1 (room not paid): allow payment only when booking is 'Đã xác nhận' and there are no 'Chờ xác nhận' services.
-            // - Stage 2 (room already paid): allow payment for additional confirmed services when there are payable services and no 'Chờ xác nhận' services.
+            // Re-evaluate canPay based on payment stages
             if (!roomAlreadyPaid) {
-                if (booking.getStatus() != null && booking.getStatus().equals("Đã xác nhận") && pendingServices == 0) {
-                    canPay = true;
-                    paymentMessage = "Booking đã được xác nhận. Bạn có thể thanh toán ngay!";
-                } else if (booking.getStatus() != null && booking.getStatus().equals("Chờ xác nhận")) {
-                    canPay = false;
-                    paymentMessage = "Booking đang chờ admin xác nhận. Vui lòng chờ admin xác nhận trước khi thanh toán.";
-                } else {
-                    canPay = false;
-                    paymentMessage = booking.getStatus() != null ? "Trạng thái booking: " + booking.getStatus() : "Booking chưa có trạng thái. Vui lòng liên hệ admin.";
-                }
-                System.out.println("DEBUG: Stage 1 - roomAlreadyPaid=" + roomAlreadyPaid + ", pendingServices=" + pendingServices + ", canPay=" + canPay);
+                canPay = true; // stage 1: room + confirmed services
+                paymentMessage = "Thanh toán tiền phòng và dịch vụ đã xác nhận.";
+                System.out.println("DEBUG: Stage 1 - Room not paid yet, canPay=true, displayTotal=" + displayTotal);
+            } else if (servicePayableTotal > 0) {
+                canPay = true; // stage 2: additional services only
+                paymentMessage = "Bạn có dịch vụ phát sinh chưa thanh toán.";
+                System.out.println("DEBUG: Stage 2 - Room paid, services pending, canPay=true, servicePayableTotal=" + servicePayableTotal);
             } else {
-                // room already paid -> service-only payments
-                if (servicePayableTotal > 0 && pendingServices == 0) {
-                    canPay = true;
-                    paymentMessage = "Bạn có dịch vụ phát sinh chưa thanh toán.";
-                } else if (pendingServices > 0) {
-                    canPay = false;
-                    paymentMessage = "Có dịch vụ đang chờ xác nhận. Vui lòng chờ admin trước khi thanh toán.";
-                } else {
-                    canPay = false;
-                    paymentMessage = "Booking đã thanh toán đầy đủ.";
-                }
-                System.out.println("DEBUG: Stage 2 - roomAlreadyPaid=" + roomAlreadyPaid + ", pendingServices=" + pendingServices + ", servicePayableTotal=" + servicePayableTotal + ", canPay=" + canPay);
+                canPay = false;
+                paymentMessage = "Booking đã thanh toán đầy đủ.";
+                System.out.println("DEBUG: All paid - canPay=false");
             }
             
             // Calculate roomPayable for template compatibility
