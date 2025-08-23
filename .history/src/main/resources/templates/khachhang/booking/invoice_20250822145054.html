@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hóa đơn đặt phòng</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .invoice-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .invoice-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            background: white;
+        }
+        .invoice-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 30px;
+            text-align: center;
+        }
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .price-breakdown {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .total-amount {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .action-buttons .btn {
+            border-radius: 10px;
+            padding: 12px 25px;
+            margin: 5px;
+            font-weight: 600;
+        }
+        .btn-payment {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: none;
+            color: white;
+        }
+        .btn-service {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            border: none;
+            color: white;
+        }
+        .success-icon {
+            font-size: 3rem;
+            color: #28a745;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body class="invoice-page">
+<!-- Navbar khách hàng thống nhất -->
+<div th:replace="~{khachhang/fragments/home-navbar :: navbar}"></div>
+<!-- Fallback when booking is missing to avoid blank page / Thymeleaf errors -->
+<div th:if="${booking == null}" class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card p-4">
+                <div class="alert alert-warning mb-0">
+                    <h5 class="mb-2">Không tìm thấy hóa đơn</h5>
+                    <p>Thông tin booking không có sẵn hoặc đã hết hạn. Vui lòng kiểm tra lại đặt phòng hoặc về <a href="/rooms">trang chủ</a>.</p>
+                    <div class="mt-3">
+                        <a href="/rooms" class="btn btn-outline-primary">Về trang chủ</a>
+                        <a th:href="@{'/khachhang/services/my-orders'}" class="btn btn-outline-secondary">Xem đơn hàng</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+ </div>
+
+<div th:if="${booking != null}">
+    <div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="invoice-card">
+                <div class="invoice-header">
+                    <i class="bi bi-check-circle success-icon"></i>
+                    <h2 class="mt-3 mb-2">Đặt phòng thành công!</h2>
+                    <p class="mb-0">Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Thông tin khách hàng -->
+                    <div class="info-section">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-person-fill"></i> Thông tin khách hàng
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Tên khách:</strong> <span th:text="${booking.customerName}"></span></p>
+                                <p><strong>Số điện thoại:</strong> <span th:text="${booking.phone}"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Mã đặt phòng:</strong> <span class="badge bg-primary" th:text="${booking.id}"></span></p>
+                                <p><strong>Ngày đặt:</strong> <span th:text="${#temporals.format(booking.bookingDate, 'dd/MM/yyyy HH:mm')}"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin phòng -->
+                    <div class="info-section">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-building"></i> Thông tin phòng
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Phòng:</strong> <span th:text="${booking.room.name}"></span></p>
+                                <p><strong>Loại phòng:</strong> <span th:text="${booking.room.roomType.tenLoai}"></span></p>
+                                <p><strong>Giá/đêm:</strong> <span class="text-danger fw-bold" th:text="${#numbers.formatDecimal(booking.room.roomType.priceBase, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Ngày nhận:</strong> <span th:text="${#temporals.format(booking.checkIn, 'dd/MM/yyyy')}"></span></p>
+                                <p><strong>Ngày trả:</strong> <span th:text="${#temporals.format(booking.checkOut, 'dd/MM/yyyy')}"></span></p>
+                                <p><strong>Số đêm:</strong> <span class="badge bg-info" th:text="${nights}"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chi tiết thanh toán -->
+                    <div class="price-breakdown">
+                        <h5 class="text-dark mb-3">
+                            <i class="bi bi-calculator"></i> Chi tiết thanh toán
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="mb-2">Tiền phòng (<span th:text="${nights}"></span> đêm × <span th:text="${#numbers.formatDecimal(booking.room.roomType.priceBase, 0, 'COMMA', 0, 'POINT')}"></span> VNĐ)</p>
+                                <p class="mb-2">Tiền dịch vụ đã đặt</p>
+                                <p class="mb-0"><strong>Phí dịch vụ & thuế</strong></p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <p class="mb-2" th:text="${#numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
+                                <p class="mb-2" th:text="${#numbers.formatDecimal(serviceTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
+                                <p class="mb-0">Đã bao gồm</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tổng tiền (2 giai đoạn logic) -->
+                    <div class="total-amount">
+                        <i class="bi bi-currency-dollar"></i>
+                        <div class="mb-2">
+                            <span class="badge bg-warning text-dark" th:if="${!roomAlreadyPaid}">Giai đoạn 1: Thanh toán cùng lúc</span>
+                            <span class="badge bg-info" th:if="${roomAlreadyPaid and servicePayableTotal > 0}">Giai đoạn 2: Dịch vụ phát sinh</span>
+                            <span class="badge bg-success" th:if="${roomAlreadyPaid and (servicePayableTotal == null or servicePayableTotal == 0)}">Hoàn tất</span>
+                        </div>
+                        
+                        <!-- Stage 1: Room + initial services together -->
+                        <div th:if="${!roomAlreadyPaid}">
+                            <div>Thanh toán giai đoạn 1 (phòng + dịch vụ có sẵn):</div>
+                            <strong th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                            <div class="small mt-2 text-light">
+                                Bao gồm: Tiền phòng <span th:text="${#numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span> + 
+                                Dịch vụ <span th:text="${#numbers.formatDecimal(serviceTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Stage 2: Additional services after room payment -->
+                        <div th:if="${roomAlreadyPaid and servicePayableTotal != null and servicePayableTotal > 0}">
+                            <div class="small text-light">Tổng đã thanh toán giai đoạn 1:
+                                <span th:text="${#numbers.formatDecimal(roomTotal + (servicePaidTotal != null ? servicePaidTotal : 0), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                            </div>
+                            <div>Cần thanh toán thêm (dịch vụ phát sinh):</div>
+                            <strong th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                        </div>
+                        
+                        <!-- Completed -->
+                        <div th:if="${roomAlreadyPaid and (servicePayableTotal == null or servicePayableTotal == 0)}">
+                            <div>Đã thanh toán đầy đủ:</div>
+                            <strong th:text="${#numbers.formatDecimal(fullTotal != null ? fullTotal : total, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                        </div>
+                        
+                        <hr class="border-light">
+                        <div class="text-start small">
+                            <div>💰 Tiền phòng: <strong th:text="${#numbers.formatDecimal(roomTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
+                            <div>🛎️ Dịch vụ (giai đoạn 1): <strong th:text="${#numbers.formatDecimal(servicePaidTotal != null ? servicePaidTotal : serviceTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
+                            <div th:if="${servicePayableTotal != null and servicePayableTotal > 0}">➕ Dịch vụ phát sinh: <strong th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div class="text-center mb-4">
+                        <span th:switch="${booking.status}" class="badge fs-6 p-3">
+                            <span th:case="'Chờ xác nhận'" class="badge bg-warning text-dark">
+                                <i class="bi bi-clock"></i> Chờ admin xác nhận
+                            </span>
+                            <span th:case="'Đã xác nhận'" class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Đã xác nhận - Có thể thanh toán
+                            </span>
+                                                        <span th:case="*" class="badge" 
+                                                                    th:classappend="${booking.status != null and booking.status.contains('từ chối') ? 'bg-danger' : (booking.status != null and booking.status.contains('thanh toán') ? 'bg-primary' : 'bg-secondary')}">
+                                                                <i th:class="${booking.status != null and booking.status.contains('từ chối') ? 'bi bi-x-circle' : (booking.status != null and booking.status.contains('thanh toán') ? 'bi bi-credit-card' : 'bi bi-info-circle')}"></i>
+                                <span th:text="${booking.status}"></span>
+                            </span>
+                        </span>
+                    </div>
+
+                    <!-- Nút hành động -->
+                    <div class="action-buttons text-center">
+                        <!-- Khi booking đang ở trạng thái 'Chờ xác nhận' -> hiển thị cảnh báo và khóa các nút thanh toán -->
+                        <div th:if="${booking.status == 'Chờ xác nhận'}" class="mb-3">
+                            <div class="alert alert-warning text-center">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <strong> Thanh toán tạm thời bị vô hiệu.</strong>
+                                <div class="small">Vui lòng chờ admin xác nhận đặt phòng trước khi thực hiện thanh toán.</div>
+                            </div>
+                            <div class="d-grid gap-2 col-6 mx-auto">
+                                <button class="btn btn-secondary btn-lg" type="button" disabled>
+                                    <i class="bi bi-clock"></i> Chờ xác nhận
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Giai đoạn 1: thanh toán phòng + dịch vụ có sẵn cùng lúc -->
+                        <div>
+                            <!-- Hiển thị nút thanh toán khi phòng chưa thanh toán và không ở trạng thái 'Chờ xác nhận' -->
+                            <div th:if="${!roomAlreadyPaid and booking.status != 'Chờ xác nhận'}">
+                                <a th:href="@{'/khachhang/payment/' + ${booking.id}}" class="btn btn-payment btn-lg">
+                                    <i class="bi bi-credit-card"></i> Thanh toán
+                                    <div class="small">(<span th:text="${#numbers.formatDecimal(roomAndInitialServicesTotal != null ? roomAndInitialServicesTotal : (roomTotal + serviceTotal), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
+                                </a>
+                            </div>
+                            <!-- Nếu đang chờ admin xác nhận, hiển thị nút vô hiệu hóa rõ ràng -->
+                            <div th:if="${!roomAlreadyPaid and booking.status == 'Chờ xác nhận'}">
+                                <button class="btn btn-secondary btn-lg" type="button" disabled>
+                                    <i class="bi bi-clock"></i> Chờ xác nhận
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Giai đoạn 2: thanh toán dịch vụ phát sinh -->
+                        <div>
+                            <div th:if="${roomAlreadyPaid and servicePayableTotal > 0 and booking.status != 'Chờ xác nhận'}">
+                                <a th:href="@{'/khachhang/payment/' + ${booking.id} + '/services'}" class="btn btn-service btn-lg">
+                                    <i class="bi bi-bag-check"></i> Thanh toán dịch vụ thêm
+                                    <div class="small">(<span th:text="${#numbers.formatDecimal(servicePayableTotal, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>)</div>
+                                </a>
+                            </div>
+                            <div th:if="${roomAlreadyPaid and servicePayableTotal > 0 and booking.status == 'Chờ xác nhận'}">
+                                <button class="btn btn-secondary btn-lg" type="button" disabled>
+                                    <i class="bi bi-clock"></i> Chờ xác nhận
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Hoàn tất -->
+                        <div th:if="${roomAlreadyPaid and (servicePayableTotal == null or servicePayableTotal == 0)}" class="alert alert-success mt-3">
+                            <i class="bi bi-check-circle"></i> <strong>Đã thanh toán đầy đủ!</strong>
+                        </div>
+                        
+                        <!-- Nút đặt dịch vụ thêm -->
+                        <div class="mt-3">
+                            <!-- Cho phép đặt thêm dịch vụ chỉ khi booking không đang ở trạng thái 'Chờ xác nhận' -->
+                            <div th:if="${booking.status != 'Chờ xác nhận'}">
+                                <a th:href="@{'/khachhang/services/list?bookingId=' + ${booking.id}}" class="btn btn-outline-primary">
+                                    <i class="bi bi-plus-circle"></i> Đặt thêm dịch vụ
+                                </a>
+                            </div>
+                            <div th:if="${booking.status == 'Chờ xác nhận'}">
+                                <button class="btn btn-outline-secondary" type="button" disabled>
+                                    <i class="bi bi-plus-circle"></i> Đặt thêm dịch vụ (khóa)
+                                </button>
+                            </div>
+                            <a href="/rooms" class="btn btn-outline-secondary">
+                                <i class="bi bi-house"></i> Về trang chủ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Confirmation Modal (shared) -->
+<div class="modal fade" id="confirmPaymentModal" tabindex="-1" aria-labelledby="confirmPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmPaymentModalLabel">Xác nhận thanh toán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmPaymentMessage">Bạn có chắc muốn thanh toán số tiền <strong id="confirmAmount">0 VNĐ</strong> cho booking <strong id="confirmBooking">#0</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmPaymentBtn">Xác nhận và thanh toán</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        let activeForm = null;
+        const modalEl = document.getElementById('confirmPaymentModal');
+        if (!modalEl) return;
+        const bsModal = new bootstrap.Modal(modalEl);
+        const amountEl = document.getElementById('confirmAmount');
+        const bookingEl = document.getElementById('confirmBooking');
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+
+        document.querySelectorAll('.payment-form').forEach(function(form){
+            form.addEventListener('submit', function(e){
+                e.preventDefault();
+                activeForm = form;
+                const amount = form.getAttribute('data-amount') || form.dataset.amount || 0;
+                const bookingId = form.getAttribute('data-booking') || form.dataset.booking || '';
+                const fmt = new Intl.NumberFormat('vi-VN');
+                amountEl.textContent = fmt.format(Number(amount || 0)) + ' VNĐ';
+                bookingEl.textContent = '#' + bookingId;
+                bsModal.show();
+            });
+        });
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function(){
+                if (!activeForm) return;
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Đang xử lý...';
+                bsModal.hide();
+                setTimeout(function(){ activeForm.submit(); }, 150);
+            });
+        }
+    })();
+</script>
+</body>
+</html>

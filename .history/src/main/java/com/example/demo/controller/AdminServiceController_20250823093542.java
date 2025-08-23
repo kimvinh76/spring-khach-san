@@ -3,9 +3,9 @@ package com.example.demo.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -135,8 +135,7 @@ public class AdminServiceController {
     // Hoàn thành tất cả dịch vụ đang xử lý của một booking
     @PostMapping("/complete-booking/{bookingId}")
     public String completeAllServicesByBooking(@PathVariable Long bookingId, RedirectAttributes redirectAttributes) {
-    log.info("POST /admin/services/complete-booking/{} called", bookingId);
-    try {
+        try {
             List<ServiceOrder> services = serviceOrderService.findByBookingId(bookingId);
             int completedCount = 0;
             
@@ -166,8 +165,7 @@ public class AdminServiceController {
     // Xác nhận đơn dịch vụ
     @PostMapping("/{id}/confirm")
     public String confirmServiceOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    log.info("POST /admin/services/{}/confirm called", id);
-    try {
+        try {
             ServiceOrder serviceOrder = serviceOrderService.findById(id).orElse(null);
             if (serviceOrder == null) {
                 redirectAttributes.addFlashAttribute(FLASH_ERROR, MSG_NOT_FOUND);
@@ -214,8 +212,7 @@ public class AdminServiceController {
     // Hoàn thành đơn dịch vụ  
     @PostMapping("/{id}/complete")
     public String completeServiceOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    log.info("POST /admin/services/{}/complete called", id);
-    try {
+        try {
             ServiceOrder serviceOrder = serviceOrderService.findById(id).orElse(null);
             if (serviceOrder == null) {
                 redirectAttributes.addFlashAttribute(FLASH_ERROR, MSG_NOT_FOUND);

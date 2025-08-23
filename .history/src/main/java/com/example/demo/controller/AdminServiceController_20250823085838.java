@@ -3,8 +3,6 @@ package com.example.demo.controller;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +21,6 @@ import com.example.demo.service.ServiceOrderService;
 public class AdminServiceController {
     
     private final ServiceOrderService serviceOrderService;
-
-    private static final Logger log = LoggerFactory.getLogger(AdminServiceController.class);
 
     public AdminServiceController(ServiceOrderService serviceOrderService) {
         this.serviceOrderService = serviceOrderService;
@@ -105,15 +101,11 @@ public class AdminServiceController {
             int updatedCount = 0;
 
             for (ServiceOrder service : services) {
-                String before = service.getStatus();
-                if (STATUS_PENDING.equals(before)) {
+                if (STATUS_PENDING.equals(service.getStatus())) {
                     // Mark as processing (Đang xử lý) to avoid skipping the processing step
                     service.setStatus(STATUS_PROCESSING);
                     serviceOrderService.save(service);
                     updatedCount++;
-                    log.info("Booking {}: service {} status changed {} -> {}", bookingId, service.getId(), before, service.getStatus());
-                } else {
-                    log.debug("Booking {}: service {} skipped (status={})", bookingId, service.getId(), before);
                 }
             }
 
@@ -135,8 +127,7 @@ public class AdminServiceController {
     // Hoàn thành tất cả dịch vụ đang xử lý của một booking
     @PostMapping("/complete-booking/{bookingId}")
     public String completeAllServicesByBooking(@PathVariable Long bookingId, RedirectAttributes redirectAttributes) {
-    log.info("POST /admin/services/complete-booking/{} called", bookingId);
-    try {
+        try {
             List<ServiceOrder> services = serviceOrderService.findByBookingId(bookingId);
             int completedCount = 0;
             
@@ -166,8 +157,7 @@ public class AdminServiceController {
     // Xác nhận đơn dịch vụ
     @PostMapping("/{id}/confirm")
     public String confirmServiceOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    log.info("POST /admin/services/{}/confirm called", id);
-    try {
+        try {
             ServiceOrder serviceOrder = serviceOrderService.findById(id).orElse(null);
             if (serviceOrder == null) {
                 redirectAttributes.addFlashAttribute(FLASH_ERROR, MSG_NOT_FOUND);
@@ -214,8 +204,7 @@ public class AdminServiceController {
     // Hoàn thành đơn dịch vụ  
     @PostMapping("/{id}/complete")
     public String completeServiceOrder(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    log.info("POST /admin/services/{}/complete called", id);
-    try {
+        try {
             ServiceOrder serviceOrder = serviceOrderService.findById(id).orElse(null);
             if (serviceOrder == null) {
                 redirectAttributes.addFlashAttribute(FLASH_ERROR, MSG_NOT_FOUND);
