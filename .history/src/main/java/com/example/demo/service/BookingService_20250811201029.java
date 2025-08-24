@@ -1,8 +1,5 @@
 package com.example.demo.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -85,26 +82,5 @@ public class BookingService {
     
     public List<Booking> findByStatusContaining(String status) {
         return bookingRepository.findByStatusContaining(status);
-    }
-
-    /**
-     * Test helper used only by PaymentIntegrationTest to quickly create a minimal Booking.
-     * Avoids having to duplicate booking creation logic inside the test.
-     */
-    public Booking createSampleBookingForTest() {
-        Booking b = new Booking();
-        b.setCustomerName("Test User");
-        b.setEmail("test@example.com");
-        b.setPhone("0000000000");
-        b.setGuestCount(1);
-        b.setNote("Test booking");
-        LocalDate today = LocalDate.now();
-        b.setCheckIn(today.plusDays(1));
-        b.setCheckOut(today.plusDays(2));
-        b.setBookingDate(LocalDateTime.now());
-        b.setTotalAmount(BigDecimal.valueOf(100000));
-        b.setStatus("PENDING");
-        // room & userId left null intentionally – not required for payment initiation test
-        return bookingRepository.save(b);
     }
 }

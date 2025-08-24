@@ -1,0 +1,37 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Payments - Admin</title>
+    <link rel="stylesheet" th:href="@{/css/admin/styles.css}" />
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Payments</h1>
+    <table class="table table-sm">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Booking</th>
+            <th>Provider</th>
+            <th>ProviderRef</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Created</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="p : ${payments}">
+            <td th:text="${p.id}"></td>
+            <td th:text="${p.bookingId}"></td>
+            <td th:text="${p.provider}"></td>
+            <td th:text="${p.providerRef}"></td>
+            <td th:text="${p.amount}"></td>
+            <td th:text="${p.status}"></td>
+            <td th:text="${#temporals.format(p.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

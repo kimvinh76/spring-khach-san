@@ -1,0 +1,19 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Mock Provider Checkout</title>
+</head>
+<body>
+<div class="container">
+    <h2>Mock Checkout</h2>
+    <p>Payment ID: <span th:text="${paymentId}"></span></p>
+    <p>Provider Ref: <span th:text="${providerRef}"></span></p>
+    <form th:action="@{/mock-provider/complete}" method="post">
+        <input type="hidden" name="paymentId" th:value="${paymentId}" />
+        <input type="hidden" name="providerRef" th:value="${providerRef}" />
+        <button type="submit">Simulate Success</button>
+    </form>
+</div>
+</body>
+</html>
